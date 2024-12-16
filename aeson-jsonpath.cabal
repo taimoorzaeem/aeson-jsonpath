@@ -1,0 +1,33 @@
+name:               aeson-jsonpath
+version:            0.1.0.0
+synopsis:           Parse and run JSONPath queries on Aeson documents
+description:        RFC 9535 compliant JSONPath parsing and querying
+                    package. JSONPath is similar to XPath for querying XML documents.
+license:            MIT
+license-file:       LICENSE
+author:             Taimoor Zaeem
+maintainer:         Taimoor Zaeem <mtaimoorzaeem@gmail.com>
+category:           JSON, Text, Web
+homepage:           https://github.com/taimoorzaeem/aeson-jsonpath
+bug-reports:        https://github.com/taimoorzaeem/aeson-jsonpath/issues
+build-type:         Simple
+extra-source-files: CHANGELOG.md
+cabal-version:      >= 1.10
+
+library
+  default-language:   Haskell2010
+  default-extensions: OverloadedStrings
+                      NoImplicitPrelude
+  hs-source-dirs:     src
+  exposed-modules:    Data.Aeson.JSONPath
+                      Data.Aeson.JSONPath.Parser
+  build-depends:      aeson                     >= 2.0.3 && < 2.3
+                    , base                      >= 4.9 && < 4.20
+                    , parsec                    >= 3.1.11 && < 3.2
+                    , protolude                 >= 0.3.1 && < 0.4
+                    , scientific                >= 0.3.4 && < 0.4
+                    , text                      >= 1.2.2 && < 2.2
+                    , unordered-containers      >= 0.2.8 && < 0.3
+                    , vector                    >= 0.11 && < 0.14
+
+  ghc-options:        -Werror -Wall
