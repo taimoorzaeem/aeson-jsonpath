@@ -17,19 +17,19 @@ import Protolude
 
 data JSPQuery
   = JSPRoot [JSPSegment]
-  deriving (Show)
+  deriving (Eq, Show)
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-segments-2
 data JSPSegment
   = JSPChildSeg JSPChildSegment
-  deriving (Show)
+  deriving (Eq, Show)
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-child-segment
 data JSPChildSegment
   = JSPBracketed [JSPSelector]
   | JSPMemberNameSH JSPNameSelector
   | JSPSegWildcard JSPWildcardT
-  deriving (Show)
+  deriving (Eq, Show)
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-selectors-2
 data JSPSelector
@@ -37,10 +37,10 @@ data JSPSelector
   | JSPIndexSel JSPIndexSelector
   | JSPSliceSel JSPSliceSelector
   | JSPWildSel JSPWildcardT
-  deriving (Show)
+  deriving (Eq, Show)
 
 data JSPWildcardT = JSPWildcard
-  deriving (Show)
+  deriving (Eq, Show)
 
 type JSPNameSelector = Text
 
