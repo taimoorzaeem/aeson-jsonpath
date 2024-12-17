@@ -1,5 +1,13 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
-module Data.Aeson.JSONPath.Parser where
+module Data.Aeson.JSONPath.Parser
+  ( JSPQuery (..)
+  , JSPSegment (..)
+  , JSPChildSegment (..)
+  , JSPSelector (..)
+  , JSPWildcardT (..)
+  , pJSPQuery
+  )
+  where
 
 import qualified Text.ParserCombinators.Parsec  as P
 
