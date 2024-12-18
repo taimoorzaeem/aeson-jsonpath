@@ -40,6 +40,7 @@ test-suite spec
   hs-source-dirs:     test
   main-is:            Main.hs
   other-modules:      ParserSpec
+                      QuerySpec
   build-depends:      aeson                     >= 2.0.3 && < 2.3
                     , aeson-jsonpath
                     , base                      >= 4.9 && < 4.20

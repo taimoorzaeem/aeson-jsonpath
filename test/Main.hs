@@ -6,14 +6,16 @@ import qualified Test.Hspec        as HS
 import Test.Hspec.Runner
 
 import qualified ParserSpec
+import qualified QuerySpec
 
 import System.Exit (exitFailure, exitSuccess)
 import Protolude
 
 allSpecs :: Spec
 allSpecs = do
-  HS.describe "Run all tests" $
+  HS.describe "Run all tests" $ do
     ParserSpec.spec
+    QuerySpec.spec
 
 main :: IO ()
 main = do
