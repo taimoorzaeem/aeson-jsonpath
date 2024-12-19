@@ -38,8 +38,8 @@ traverseJSPSegment (JSPChildSeg jspChildSeg) doc = traverseJSPChildSeg jspChildS
 
 traverseJSPChildSeg :: JSPChildSegment -> JSON.Value -> JSON.Value
 traverseJSPChildSeg (JSPBracketed sels) doc = traverseJSPSelectors sels doc
-traverseJSPChildSeg (JSPMemberNameSH key) (JSON.Object obj) = fromMaybe (JSON.Array V.empty) $ KM.lookup (K.fromText key) obj
-traverseJSPChildSeg (JSPMemberNameSH _) _ = JSON.Object KM.empty
+traverseJSPChildSeg (JSPMemberNameSH key) (JSON.Object obj) = fromMaybe emptyJSArray $ KM.lookup (K.fromText key) obj
+traverseJSPChildSeg (JSPMemberNameSH _) _ = emptyJSArray
 traverseJSPChildSeg (JSPSegWildcard JSPWildcard) doc = doc
 
 
@@ -49,12 +49,12 @@ traverseJSPSelectors sels doc = JSON.Array $ V.map traverse' $ V.fromList sels
     traverse' = flip traverseJSPSelector doc
 
 traverseJSPSelector :: JSPSelector -> JSON.Value -> JSON.Value
-traverseJSPSelector (JSPNameSel key) (JSON.Object obj) = fromMaybe (JSON.Array V.empty) $ KM.lookup (K.fromText key) obj
+traverseJSPSelector (JSPNameSel key) (JSON.Object obj) = fromMaybe emptyJSArray $ KM.lookup (K.fromText key) obj
 traverseJSPSelector (JSPNameSel _) _ = JSON.Object KM.empty
-traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = fromMaybe (JSON.Array V.empty) $ (V.!?) arr idx
-traverseJSPSelector (JSPIndexSel _) _ = JSON.Object KM.empty
+traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = fromMaybe emptyJSArray $ (V.!?) arr idx
+traverseJSPSelector (JSPIndexSel _) _ = emptyJSArray
 traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceSelector sliceVals arr
-traverseJSPSelector (JSPSliceSel _) _ = JSON.Object KM.empty
+traverseJSPSelector (JSPSliceSel _) _ = emptyJSArray
 traverseJSPSelector (JSPWildSel JSPWildcard) doc = doc
 
 
@@ -64,3 +64,7 @@ traverseJSPSliceSelector (Just start, Just end, 1) doc = JSON.Array $ V.slice (n
     len = V.length doc
     normalize i = if i >= 0 then i else len + i
 traverseJSPSliceSelector _ _ = JSON.Object KM.empty
+
+
+emptyJSArray :: JSON.Value
+emptyJSArray = JSON.Array V.empty
