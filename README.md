@@ -17,6 +17,14 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
   - [ ] Descendant Segment
 - [ ] Function Extensions
 
+## Usage
+
+```haskell
+import Data.Aeson.JSONPath (runJSPQuery)
+
+let rootDoc = runJSPQuery "$" jsonDoc -- returns the root object
+```
+
 ## Development
 
 The project is unreleased. Contributions are welcomed.
