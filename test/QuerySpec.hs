@@ -12,8 +12,6 @@ import Test.Hspec
 
 import Protolude
 
-
--- Define a data type for Book
 data Book = Book
   { title    :: Text
   , author   :: Text
@@ -23,14 +21,12 @@ data Book = Book
 
 instance JSON.ToJSON Book
 
--- Define a data type for Store containing a list of Books
 data Store = Store
   { books :: [Book]
   } deriving (Show, Generic)
 
 instance JSON.ToJSON Store
 
--- Define a data type for the Root JSON structure containing a Store
 data Root = Root
   { store :: Store
   } deriving (Show, Generic)
@@ -61,6 +57,22 @@ storeDoc = JSON.toJSON $ Store
         ]
     }
 
+
+booksDoc :: JSON.Value
+booksDoc = JSON.toJSON $
+      [ Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
+      , Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
+      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
+      , Book { title = "Crime and Punishment", author = "Fyodor Dostoevsky", category = "fiction", price = 19.99 }
+      ]
+
+
+books0Doc :: JSON.Value
+books0Doc = JSON.toJSON $ [
+       Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
+    ]
+
+
 spec :: Spec
 spec = do
   describe "Run JSPQuery on JSON documents" $ do
@@ -69,3 +81,9 @@ spec = do
 
     it "returns store object when query is $.store" $
       runJSPQuery "$.store" rootDoc `shouldBe` Right storeDoc
+
+    it "returns books array when query is $.store.books" $
+      runJSPQuery "$.store.books" rootDoc `shouldBe` Right booksDoc
+
+    it "returns first book item when query is $.store.books[0]" $
+      runJSPQuery "$.store.books[0]" rootDoc `shouldBe` Right books0Doc
