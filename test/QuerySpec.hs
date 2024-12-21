@@ -76,6 +76,19 @@ books0And2Doc = JSON.toJSON $ [
       , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
     ]
 
+books1To3Doc :: JSON.Value
+books1To3Doc = JSON.toJSON $ [
+       Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
+      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
+    ]
+
+books1To3And0And1Doc :: JSON.Value
+books1To3And0And1Doc = JSON.toJSON $ [
+       Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
+      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
+      , Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
+      , Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
+    ]
 
 spec :: Spec
 spec = do
@@ -89,8 +102,14 @@ spec = do
     it "returns books array when query is $.store.books" $
       runJSPQuery "$.store.books" rootDoc `shouldBe` Right booksDoc
 
-    it "returns first book item when query is $.store.books[0]" $
+    it "returns 0-index book item when query is $.store.books[0]" $
       runJSPQuery "$.store.books[0]" rootDoc `shouldBe` Right books0Doc
 
-    it "returns first and third item with query is $.store.books[0,2]" $
+    it "returns 0,2-index item when query is $.store.books[0,2]" $
       runJSPQuery "$.store.books[0,2]" rootDoc `shouldBe` Right books0And2Doc
+
+    it "returns 1To3-index when query is $.store.books[1:3]" $
+      runJSPQuery "$.store.books[1:3]" rootDoc `shouldBe` Right books1To3Doc
+
+    it "returns 1To3-index and 0,1-index whe nquery is $.store.books[1:3,0,1]" $
+      runJSPQuery "$.store.books[1:3,0,1]" rootDoc `shouldBe` Right books1To3And0And1Doc

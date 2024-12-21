@@ -1,5 +1,5 @@
 module Data.Aeson.JSONPath
-  ( runJSPQuery)
+  ( runJSPQuery )
   where
 
 import qualified Data.Aeson                    as JSON
@@ -44,27 +44,26 @@ traverseJSPChildSeg (JSPSegWildcard JSPWildcard) doc = doc
 
 
 traverseJSPSelectors :: [JSPSelector] -> JSON.Value -> JSON.Value
-traverseJSPSelectors sels doc = JSON.Array $ V.map traverse' $ V.fromList sels
+traverseJSPSelectors sels doc = JSON.Array $ V.concat $ map traverse' sels
   where
     traverse' = flip traverseJSPSelector doc
 
-traverseJSPSelector :: JSPSelector -> JSON.Value -> JSON.Value
-traverseJSPSelector (JSPNameSel key) (JSON.Object obj) = fromMaybe emptyJSArray $ KM.lookup (K.fromText key) obj
-traverseJSPSelector (JSPNameSel _) _ = JSON.Object KM.empty
-traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = fromMaybe emptyJSArray $ (V.!?) arr idx
-traverseJSPSelector (JSPIndexSel _) _ = emptyJSArray
+traverseJSPSelector :: JSPSelector -> JSON.Value -> V.Vector JSON.Value
+traverseJSPSelector (JSPNameSel key) (JSON.Object obj) = maybe V.empty V.singleton $ KM.lookup (K.fromText key) obj
+traverseJSPSelector (JSPNameSel _) _ = V.empty
+traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = maybe V.empty V.singleton $ (V.!?) arr idx
+traverseJSPSelector (JSPIndexSel _) _ = V.empty
 traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceSelector sliceVals arr
-traverseJSPSelector (JSPSliceSel _) _ = emptyJSArray
-traverseJSPSelector (JSPWildSel JSPWildcard) doc = doc
+traverseJSPSelector (JSPSliceSel _) _ = V.empty
+traverseJSPSelector (JSPWildSel JSPWildcard) doc = V.singleton doc
 
 
-traverseJSPSliceSelector :: (Maybe Int, Maybe Int, Int) -> JSON.Array -> JSON.Value
-traverseJSPSliceSelector (Just start, Just end, 1) doc = JSON.Array $ V.slice (normalize start) (normalize end) doc
+traverseJSPSliceSelector :: (Maybe Int, Maybe Int, Int) -> JSON.Array -> V.Vector JSON.Value
+traverseJSPSliceSelector (Just start, Just end, 1) doc = V.slice (normalize start) ((normalize end)-1) doc
   where
     len = V.length doc
     normalize i = if i >= 0 then i else len + i
-traverseJSPSliceSelector _ _ = JSON.Object KM.empty
-
+traverseJSPSliceSelector _ _ = V.empty
 
 emptyJSArray :: JSON.Value
 emptyJSArray = JSON.Array V.empty
