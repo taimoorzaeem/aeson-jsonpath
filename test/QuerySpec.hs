@@ -4,10 +4,8 @@ module QuerySpec
   where
 
 import qualified Data.Aeson        as JSON
-import qualified Data.Aeson.KeyMap as KM
 
 import Data.Aeson.JSONPath (runJSPQuery)
-import GHC.Generics (Generic (..))
 import Test.Hspec
 
 import Protolude
@@ -72,6 +70,12 @@ books0Doc = JSON.toJSON $ [
        Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
     ]
 
+books0And2Doc :: JSON.Value
+books0And2Doc = JSON.toJSON $ [
+      Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
+      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
+    ]
+
 
 spec :: Spec
 spec = do
@@ -87,3 +91,6 @@ spec = do
 
     it "returns first book item when query is $.store.books[0]" $
       runJSPQuery "$.store.books[0]" rootDoc `shouldBe` Right books0Doc
+
+    it "returns first and third item with query is $.store.books[0,2]" $
+      runJSPQuery "$.store.books[0,2]" rootDoc `shouldBe` Right books0And2Doc

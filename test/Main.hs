@@ -8,7 +8,6 @@ import Test.Hspec.Runner
 import qualified ParserSpec
 import qualified QuerySpec
 
-import System.Exit (exitFailure, exitSuccess)
 import Protolude
 
 allSpecs :: Spec
