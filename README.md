@@ -1,6 +1,6 @@
 # aeson-jsonpath
 
-![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/haskell.yml/badge.svg?event=push)
+![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/haskell.yml/badge.svg?event=push) ![hackage-docs](https://img.shields.io/badge/hackage-v0.1.0.0-blue)
 
 Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson).
 
@@ -17,14 +17,24 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
   - [ ] Descendant Segment
 - [ ] Function Extensions
 
-## Usage
+## Why use this?
+
+The package is designed to provide an [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant interface to run JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson) objects. The parser is written in an easily extendable way and hence it will be able to provide newer features in our future releases possibly without any breaking changes.
 
 ```haskell
 import Data.Aeson.JSONPath (runJSPQuery)
 
-let rootDoc = runJSPQuery "$" jsonDoc -- returns the root object
+-- currently supported queries are:
+runJSPQuery "$" jsonDoc
+runJSPQuery "$.*" jsonDoc -- supports wildcard operator
+runJSPQuery "$.store" jsonDoc -- supports member name shorthand
+runJSPQuery "$.store.books" jsonDoc
+runJSPQuery "$.store.books[0]" jsonDoc
+runJSPQuery "$.store.books[-4]" jsonDoc -- supports negative index
+runJSPQuery "$.store.books[1:4:-1]" jsonDoc -- suports slicing with negative step
+runJSPQuery "$.store.books[1,2:5,7]" jsonDoc -- supports multiple selectors
 ```
 
 ## Development
 
-The project is unreleased. Contributions are welcomed.
+Please report any bugs you encounter. Contributions are welcomed.
