@@ -19,10 +19,14 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
 
 ## Why use this?
 
-The package is designed to provide an [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant interface to run JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson) objects. The parser is written in an easily extendable way and hence it will be able to provide newer features in our future releases possibly without any breaking changes.
+- Provides a clean interface (single function call) to run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson) objects. 
+- The parser is written in an extendable way and hence it will be able to provide newer features in our future releases possibly without any breaking changes.
 
 ```haskell
+import Data.Aeson          (Value (..))
 import Data.Aeson.JSONPath (runJSPQuery)
+
+jsonDoc :: Value -- aeson value
 
 -- currently supported queries are:
 runJSPQuery "$" jsonDoc
