@@ -43,7 +43,7 @@ traverseJSPChildSeg :: JSPChildSegment -> JSON.Value -> JSON.Value
 traverseJSPChildSeg (JSPBracketed sels) doc = traverseJSPSelectors sels doc
 traverseJSPChildSeg (JSPMemberNameSH key) (JSON.Object obj) = fromMaybe emptyJSArray $ KM.lookup (K.fromText key) obj
 traverseJSPChildSeg (JSPMemberNameSH _) _ = emptyJSArray
-traverseJSPChildSeg (JSPSegWildcard JSPWildcard) doc = doc
+traverseJSPChildSeg (JSPWildSeg JSPWildcard) doc = doc
 
 
 traverseJSPSelectors :: [JSPSelector] -> JSON.Value -> JSON.Value

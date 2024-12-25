@@ -9,7 +9,8 @@ import Data.Aeson.JSONPath.Parser (pJSPQuery
                                   , JSPQuery (..)
                                   , JSPSegment (..)
                                   , JSPChildSegment (..)
-                                  , JSPSelector (..))
+                                  , JSPSelector (..)
+                                  , JSPWildcardT (..))
 import Prelude
 
 spec :: Spec
@@ -41,3 +42,9 @@ spec = do
 
     it "parses query: $.store.books[1:3, 0, 1]" $
       P.parse pJSPQuery "" "$.store.books[1:3, 0, 1]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPMemberNameSH "store"), JSPChildSeg (JSPMemberNameSH "books"), JSPChildSeg (JSPBracketed [JSPSliceSel (Just 1, Just 3, 1), JSPIndexSel 0, JSPIndexSel 1])])
+
+    it "parses query: $.*" $
+      P.parse pJSPQuery "" "$.*" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPWildSeg JSPWildcard)])
+
+    it "parses query: $[*]" $
+      P.parse pJSPQuery "" "$[*]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPBracketed [JSPWildSel JSPWildcard])])

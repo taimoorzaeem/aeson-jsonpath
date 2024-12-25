@@ -4,12 +4,16 @@ module QuerySpec
   where
 
 import qualified Data.Aeson        as JSON
+import qualified Data.Vector       as V
 
 import Data.Aeson.JSONPath  (runJSPQuery)
 import Data.Aeson.QQ.Simple (aesonQQ)
 import Test.Hspec
 
 import Prelude
+
+toSingletonArray :: JSON.Value -> JSON.Value
+toSingletonArray = JSON.Array . V.singleton
 
 -- taken from https://serdejsonpath.live/
 rootDoc :: JSON.Value
@@ -229,3 +233,9 @@ spec = do
 
     it "returns slice with query $[::-1]" $
       runJSPQuery "$[::-1]" alphaArr `shouldBe` Right gfedcbaArr
+
+    it "returns root with query $.*" $
+      runJSPQuery "$.*" rootDoc `shouldBe` Right rootDoc
+
+    it "returns root with query $[*]" $
+      runJSPQuery "$[*]" rootDoc `shouldBe` Right (toSingletonArray rootDoc)

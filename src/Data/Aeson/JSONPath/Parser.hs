@@ -31,7 +31,7 @@ data JSPSegment
 data JSPChildSegment
   = JSPBracketed [JSPSelector]
   | JSPMemberNameSH JSPNameSelector
-  | JSPSegWildcard JSPWildcardT
+  | JSPWildSeg JSPWildcardT
   deriving (Eq, Show)
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-selectors-2
@@ -84,7 +84,7 @@ pJSPSliceSel = do
 
 
 pJSPWildSel :: P.Parser JSPSelector
-pJSPWildSel = JSPWildSel <$> (P.string ".*" $> JSPWildcard)
+pJSPWildSel = JSPWildSel <$> (P.char '*' $> JSPWildcard)
 
 pJSPSegment :: P.Parser JSPSegment
 pJSPSegment = pJSPChildSegment
@@ -113,7 +113,7 @@ pJSPMemberNameSH = do
   return (JSPMemberNameSH val)
 
 pJSPWildSeg :: P.Parser JSPChildSegment
-pJSPWildSeg = JSPSegWildcard <$> (P.string ".*" $> JSPWildcard)
+pJSPWildSeg = JSPWildSeg <$> (P.string ".*" $> JSPWildcard)
 
 pSignedInt :: P.Parser Int
 pSignedInt = do
