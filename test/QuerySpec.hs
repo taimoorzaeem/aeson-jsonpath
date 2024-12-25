@@ -1,113 +1,195 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE QuasiQuotes #-}
 module QuerySpec
   ( spec )
   where
 
 import qualified Data.Aeson        as JSON
 
-import Data.Aeson.JSONPath (runJSPQuery)
+import Data.Aeson.JSONPath  (runJSPQuery)
+import Data.Aeson.QQ.Simple (aesonQQ)
 import Test.Hspec
 
-import Protolude
-
-data Book = Book
-  { title    :: Text
-  , author   :: Text
-  , category :: Text
-  , price    :: Double
-  } deriving (Show, Generic)
-
-instance JSON.ToJSON Book
-
-data Store = Store
-  { books :: [Book]
-  } deriving (Show, Generic)
-
-instance JSON.ToJSON Store
-
-data Root = Root
-  { store :: Store
-  } deriving (Show, Generic)
-
-instance JSON.ToJSON Root
+import Prelude
 
 -- taken from https://serdejsonpath.live/
 rootDoc :: JSON.Value
-rootDoc = JSON.toJSON $ Root
-  { store = Store
-      { books =
-          [ Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
-          , Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
-          , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
-          , Book { title = "Crime and Punishment", author = "Fyodor Dostoevsky", category = "fiction", price = 19.99 }
-          ]
-      }
-  }
+rootDoc = [aesonQQ|{
+    "store": {
+      "books": [
+        {
+          "title": "Guns, Germs, and Steel",
+          "author": "Jared Diamond",
+          "category": "reference",
+          "price": 24.99
+        },
+        {
+          "title": "David Copperfield",
+          "author": "Charles Dickens",
+          "category": "fiction",
+          "price": 12.99
+        },
+        {
+          "title": "Moby Dick",
+          "author": "Herman Melville",
+          "category": "fiction",
+          "price": 8.99
+        },
+        {
+          "title": "Crime and Punishment",
+          "author": "Fyodor Dostoevsky",
+          "category": "fiction",
+          "price": 19.99
+        }
+      ]
+    }
+  }|]
 
 
 storeDoc :: JSON.Value
-storeDoc = JSON.toJSON $ Store
-    { books =
-        [ Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
-        , Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
-        , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
-        , Book { title = "Crime and Punishment", author = "Fyodor Dostoevsky", category = "fiction", price = 19.99 }
-        ]
-    }
-
+storeDoc = [aesonQQ|
+  {
+    "books": [
+      {
+        "title": "Guns, Germs, and Steel",
+        "author": "Jared Diamond",
+        "category": "reference",
+        "price": 24.99
+      },
+      {
+        "title": "David Copperfield",
+        "author": "Charles Dickens",
+        "category": "fiction",
+        "price": 12.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      },
+      {
+        "title": "Crime and Punishment",
+        "author": "Fyodor Dostoevsky",
+        "category": "fiction",
+        "price": 19.99
+      }
+    ]
+  }|]
 
 booksDoc :: JSON.Value
-booksDoc = JSON.toJSON $
-      [ Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
-      , Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
-      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
-      , Book { title = "Crime and Punishment", author = "Fyodor Dostoevsky", category = "fiction", price = 19.99 }
-      ]
+booksDoc = [aesonQQ| [
+      {
+        "title": "Guns, Germs, and Steel",
+        "author": "Jared Diamond",
+        "category": "reference",
+        "price": 24.99
+      },
+      {
+        "title": "David Copperfield",
+        "author": "Charles Dickens",
+        "category": "fiction",
+        "price": 12.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      },
+      {
+        "title": "Crime and Punishment",
+        "author": "Fyodor Dostoevsky",
+        "category": "fiction",
+        "price": 19.99
+      }
+  ]|]
 
 
 books0Doc :: JSON.Value
-books0Doc = JSON.toJSON $ [
-       Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
-    ]
+books0Doc = [aesonQQ|[
+      {
+        "title": "Guns, Germs, and Steel",
+        "author": "Jared Diamond",
+        "category": "reference",
+        "price": 24.99
+      }
+  ]|]
 
 books0And2Doc :: JSON.Value
-books0And2Doc = JSON.toJSON $ [
-      Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
-      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
-    ]
+books0And2Doc = [aesonQQ|[
+      {
+        "title": "Guns, Germs, and Steel",
+        "author": "Jared Diamond",
+        "category": "reference",
+        "price": 24.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      }
+  ]|]
 
 books1To3Doc :: JSON.Value
-books1To3Doc = JSON.toJSON $ [
-       Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
-      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
-    ]
+books1To3Doc = [aesonQQ|[
+      {
+        "title": "David Copperfield",
+        "author": "Charles Dickens",
+        "category": "fiction",
+        "price": 12.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      }
+  ]|]
 
 books1To3And0And1Doc :: JSON.Value
-books1To3And0And1Doc = JSON.toJSON $ [
-       Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
-      , Book { title = "Moby Dick", author = "Herman Melville", category = "fiction", price = 8.99 }
-      , Book { title = "Guns, Germs, and Steel", author = "Jared Diamond", category = "reference", price = 24.99 }
-      , Book { title = "David Copperfield", author = "Charles Dickens", category = "fiction", price = 12.99 }
-    ]
+books1To3And0And1Doc = [aesonQQ|[
+      {
+        "title": "David Copperfield",
+        "author": "Charles Dickens",
+        "category": "fiction",
+        "price": 12.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      },
+      {
+        "title": "Guns, Germs, and Steel",
+        "author": "Jared Diamond",
+        "category": "reference",
+        "price": 24.99
+      },
+      {
+        "title": "David Copperfield",
+        "author": "Charles Dickens",
+        "category": "fiction",
+        "price": 12.99
+      }
+  ]|]
 
-data AlphaList = AList [Text]
-  deriving (Show, Generic)
-instance JSON.ToJSON AlphaList
 
 alphaArr :: JSON.Value
-alphaArr = JSON.toJSON $ AList ["a","b","c","d","e","f","g"]
+alphaArr = [aesonQQ| ["a","b","c","d","e","f","g"] |]
 
 fgArr :: JSON.Value
-fgArr = JSON.toJSON $ AList ["f","g"]
+fgArr = [aesonQQ| ["f","g"] |]
 
 bdArr :: JSON.Value
-bdArr = JSON.toJSON $ AList ["b","d"]
+bdArr = [aesonQQ| ["b","d"] |]
 
 fdArr :: JSON.Value
-fdArr = JSON.toJSON $ AList ["f","d"]
+fdArr = [aesonQQ| ["f","d"] |]
 
 gfedcbaArr :: JSON.Value
-gfedcbaArr = JSON.toJSON $ AList ["g","f","e","d","c","b","a"]
+gfedcbaArr = [aesonQQ| ["g","f","e","d","c","b","a"] |]
 
 spec :: Spec
 spec = do

@@ -10,7 +10,7 @@ import Data.Aeson.JSONPath.Parser (pJSPQuery
                                   , JSPSegment (..)
                                   , JSPChildSegment (..)
                                   , JSPSelector (..))
-import Protolude
+import Prelude
 
 spec :: Spec
 spec = do

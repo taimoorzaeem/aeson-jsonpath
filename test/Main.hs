@@ -8,7 +8,7 @@ import Test.Hspec.Runner
 import qualified ParserSpec
 import qualified QuerySpec
 
-import Protolude
+import Prelude
 
 allSpecs :: Spec
 allSpecs = do

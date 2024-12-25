@@ -3,23 +3,26 @@ module Data.Aeson.JSONPath
   where
 
 import qualified Data.Aeson                    as JSON
-import qualified Text.ParserCombinators.Parsec as P
 import qualified Data.Aeson.Key                as K
 import qualified Data.Aeson.KeyMap             as KM
+import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
+import qualified Text.ParserCombinators.Parsec as P
 
+import Data.Maybe                 (fromMaybe)
+import Data.Text                  (Text)
 import Data.Aeson.JSONPath.Parser (JSPQuery (..)
                                   , JSPSegment (..)
                                   , JSPChildSegment (..)
                                   , JSPSelector (..)
                                   , JSPWildcardT (..)
                                   , pJSPQuery)
-import Protolude
+import Prelude
 
 
 runJSPQuery :: Text -> JSON.Value -> Either P.ParseError JSON.Value
 runJSPQuery query document = do
-  jspath <- P.parse pJSPQuery ("failed to parse query: " <> toS query) (toS query)
+  jspath <- P.parse pJSPQuery ("failed to parse query: " <> T.unpack query) (T.unpack query)
   return $ traverseJSPQuery jspath document
 
 

@@ -9,11 +9,14 @@ module Data.Aeson.JSONPath.Parser
   )
   where
 
+import qualified Data.Text                      as T
 import qualified Text.ParserCombinators.Parsec  as P
 
-import Text.Read (read)
+import Data.Functor                  (($>))
+import Data.Text                     (Text)
+import Text.ParserCombinators.Parsec ((<|>))
 
-import Protolude
+import Prelude
 
 data JSPQuery
   = JSPRoot [JSPSegment]
@@ -61,7 +64,7 @@ pJSPSelector = P.try pJSPNameSel
             <|> P.try pJSPWildSel
 
 pJSPNameSel :: P.Parser JSPSelector
-pJSPNameSel = JSPNameSel <$> toS <$> (P.char '"' *> P.many (P.noneOf "\"") <* P.char '"')
+pJSPNameSel = JSPNameSel <$> T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
 
 pJSPIndexSel :: P.Parser JSPSelector
 pJSPIndexSel = do
@@ -106,7 +109,7 @@ pJSPBracketed =  do
 pJSPMemberNameSH :: P.Parser JSPChildSegment
 pJSPMemberNameSH = do
   P.char '.'
-  val <- toS <$> P.many1 (P.alphaNum <|> P.oneOf "_$@")
+  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_$@")
   return (JSPMemberNameSH val)
 
 pJSPWildSeg :: P.Parser JSPChildSegment
