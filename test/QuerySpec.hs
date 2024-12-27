@@ -195,6 +195,27 @@ fdArr = [aesonQQ| ["f","d"] |]
 gfedcbaArr :: JSON.Value
 gfedcbaArr = [aesonQQ| ["g","f","e","d","c","b","a"] |]
 
+rfcExample1 :: JSON.Value
+rfcExample1 = [aesonQQ| {
+    "o": {"j": 1, "k": 2},
+    "a": [5, 3, [{"j": 4}, {"k": 6}]]
+  } |]
+
+rfcExample1Desc :: JSON.Value
+rfcExample1Desc = [aesonQQ| [
+    [5, 3, [{"j": 4}, {"k": 6}]],
+    {"j": 1, "k": 2},
+    5,
+    3,
+    [{"j": 4}, {"k": 6}],
+    {"j": 4},
+    {"k": 6},
+    4,
+    6,
+    1,
+    2
+  ]|]
+
 spec :: Spec
 spec = do
   describe "Run JSPQuery on JSON documents" $ do
@@ -239,3 +260,10 @@ spec = do
 
     it "returns root with query $[*]" $
       runJSPQuery "$[*]" rootDoc `shouldBe` Right (toSingletonArray rootDoc)
+
+    it "returns root with query $..*" $
+      runJSPQuery "$..*" rfcExample1 `shouldBe` Right rfcExample1Desc
+
+    it "returns root with query $..[*]" $ do
+      pendingWith "fix with wildcard selection"
+      runJSPQuery "$..[*]" rfcExample1 `shouldBe` Right rfcExample1Desc

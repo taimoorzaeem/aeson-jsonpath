@@ -14,6 +14,7 @@ import Data.Text                  (Text)
 import Data.Aeson.JSONPath.Parser (JSPQuery (..)
                                   , JSPSegment (..)
                                   , JSPChildSegment (..)
+                                  , JSPDescSegment (..)
                                   , JSPSelector (..)
                                   , JSPWildcardT (..)
                                   , pJSPQuery)
@@ -37,14 +38,29 @@ traverseJSPSegments (x:xs) doc = traverseJSPSegments xs (traverseJSPSegment x do
 
 traverseJSPSegment :: JSPSegment -> JSON.Value -> JSON.Value
 traverseJSPSegment (JSPChildSeg jspChildSeg) doc = traverseJSPChildSeg jspChildSeg doc
+traverseJSPSegment (JSPDescSeg jspDescSeg) doc = traverseJSPDescSeg jspDescSeg doc
 
 
 traverseJSPChildSeg :: JSPChildSegment -> JSON.Value -> JSON.Value
-traverseJSPChildSeg (JSPBracketed sels) doc = traverseJSPSelectors sels doc
-traverseJSPChildSeg (JSPMemberNameSH key) (JSON.Object obj) = fromMaybe emptyJSArray $ KM.lookup (K.fromText key) obj
-traverseJSPChildSeg (JSPMemberNameSH _) _ = emptyJSArray
-traverseJSPChildSeg (JSPWildSeg JSPWildcard) doc = doc
+traverseJSPChildSeg (JSPChildBracketed sels) doc = traverseJSPSelectors sels doc
+traverseJSPChildSeg (JSPChildMemberNameSH key) (JSON.Object obj) = fromMaybe emptyJSArray $ KM.lookup (K.fromText key) obj
+traverseJSPChildSeg (JSPChildMemberNameSH _) _ = emptyJSArray
+traverseJSPChildSeg (JSPChildWildSeg JSPWildcard) doc = doc
 
+
+traverseJSPDescSeg :: JSPDescSegment -> JSON.Value -> JSON.Value
+traverseJSPDescSeg (JSPDescBracketed sels) doc = JSON.Array $ V.map (traverseJSPSelectors sels) (allElemsRecursive doc)
+traverseJSPDescSeg (JSPDescMemberNameSH key) doc = traverseDescMembers key doc
+traverseJSPDescSeg (JSPDescWildSeg JSPWildcard) doc = JSON.Array $ allElemsRecursive doc
+
+-- TODO: Clean this super messy code, might require some refactoring
+traverseDescMembers :: Text -> JSON.Value -> JSON.Value
+traverseDescMembers key (JSON.Object obj) = JSON.Array $ V.concat [
+    (maybe V.empty V.singleton $ KM.lookup (K.fromText key) obj),
+    V.map (traverseDescMembers key) (allElemsRecursive (JSON.Array $ V.fromList $ KM.elems obj))
+  ]
+traverseDescMembers key ar@(JSON.Array _) = JSON.Array $ V.map (traverseDescMembers key) (allElemsRecursive ar)
+traverseDescMembers _ _ = JSON.Array V.empty
 
 traverseJSPSelectors :: [JSPSelector] -> JSON.Value -> JSON.Value
 traverseJSPSelectors sels doc = JSON.Array $ V.concat $ map traverse' sels
@@ -58,6 +74,7 @@ traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = maybe V.empty V.singlet
 traverseJSPSelector (JSPIndexSel _) _ = V.empty
 traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceSelector sliceVals arr
 traverseJSPSelector (JSPSliceSel _) _ = V.empty
+-- This does not work right with descendant segment, fix it later
 traverseJSPSelector (JSPWildSel JSPWildcard) doc = V.singleton doc
 
 
@@ -94,3 +111,14 @@ traverseJSPSliceSelector (start, end, step) doc = getSlice start end step doc
 
 emptyJSArray :: JSON.Value
 emptyJSArray = JSON.Array V.empty
+
+allElemsRecursive :: JSON.Value -> V.Vector JSON.Value
+allElemsRecursive (JSON.Object obj) = V.concat $ [
+    V.fromList (KM.elems obj),
+    V.concat $ map allElemsRecursive (KM.elems obj)
+  ]
+allElemsRecursive (JSON.Array arr) = V.concat $ [
+    arr,
+    V.concat $ map allElemsRecursive (V.toList arr)
+  ]
+allElemsRecursive _ = V.empty

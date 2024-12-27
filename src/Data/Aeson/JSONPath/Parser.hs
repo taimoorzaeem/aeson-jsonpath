@@ -3,6 +3,7 @@ module Data.Aeson.JSONPath.Parser
   ( JSPQuery (..)
   , JSPSegment (..)
   , JSPChildSegment (..)
+  , JSPDescSegment (..)
   , JSPSelector (..)
   , JSPWildcardT (..)
   , pJSPQuery
@@ -25,13 +26,22 @@ data JSPQuery
 -- https://www.rfc-editor.org/rfc/rfc9535#name-segments-2
 data JSPSegment
   = JSPChildSeg JSPChildSegment
+  | JSPDescSeg JSPDescSegment
   deriving (Eq, Show)
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-child-segment
 data JSPChildSegment
-  = JSPBracketed [JSPSelector]
-  | JSPMemberNameSH JSPNameSelector
-  | JSPWildSeg JSPWildcardT
+  = JSPChildBracketed [JSPSelector]
+  | JSPChildMemberNameSH JSPNameSelector
+  | JSPChildWildSeg JSPWildcardT
+  deriving (Eq, Show)
+
+
+-- https://www.rfc-editor.org/rfc/rfc9535#name-descendant-segment
+data JSPDescSegment
+  = JSPDescBracketed [JSPSelector]
+  | JSPDescMemberNameSH JSPNameSelector
+  | JSPDescWildSeg JSPWildcardT
   deriving (Eq, Show)
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-selectors-2
@@ -87,33 +97,61 @@ pJSPWildSel :: P.Parser JSPSelector
 pJSPWildSel = JSPWildSel <$> (P.char '*' $> JSPWildcard)
 
 pJSPSegment :: P.Parser JSPSegment
-pJSPSegment = pJSPChildSegment
+pJSPSegment = (pJSPChildSegment <|> pJSPDescSegment)
 
 pJSPChildSegment :: P.Parser JSPSegment
 pJSPChildSegment = 
-  JSPChildSeg <$> (P.try pJSPBracketed 
-                  <|> P.try pJSPMemberNameSH 
-                  <|> P.try pJSPWildSeg)
+  JSPChildSeg <$> (P.try pJSPChildBracketed 
+                  <|> P.try pJSPChildMemberNameSH 
+                  <|> P.try pJSPChildWildSeg)
 
-pJSPBracketed :: P.Parser JSPChildSegment
-pJSPBracketed =  do
+pJSPChildBracketed :: P.Parser JSPChildSegment
+pJSPChildBracketed =  do
   P.char '['
   sel <- pJSPSelector
   optionalSels <- P.many pCommaSepSelectors
   P.char ']'
-  return $ JSPBracketed (sel:optionalSels)
+  return $ JSPChildBracketed (sel:optionalSels)
     where
       pCommaSepSelectors :: P.Parser JSPSelector
       pCommaSepSelectors = P.char ',' *> P.spaces *> pJSPSelector
 
-pJSPMemberNameSH :: P.Parser JSPChildSegment
-pJSPMemberNameSH = do
+pJSPChildMemberNameSH :: P.Parser JSPChildSegment
+pJSPChildMemberNameSH = do
   P.char '.'
   val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_$@")
-  return (JSPMemberNameSH val)
+  return (JSPChildMemberNameSH val)
 
-pJSPWildSeg :: P.Parser JSPChildSegment
-pJSPWildSeg = JSPWildSeg <$> (P.string ".*" $> JSPWildcard)
+pJSPChildWildSeg :: P.Parser JSPChildSegment
+pJSPChildWildSeg = JSPChildWildSeg <$> (P.string ".*" $> JSPWildcard)
+
+
+pJSPDescSegment :: P.Parser JSPSegment
+pJSPDescSegment = 
+  JSPDescSeg <$> (P.try pJSPDescBracketed 
+                  <|> P.try pJSPDescMemberNameSH 
+                  <|> P.try pJSPDescWildSeg)
+
+pJSPDescBracketed :: P.Parser JSPDescSegment
+pJSPDescBracketed =  do
+  P.string ".."
+  P.char '['
+  sel <- pJSPSelector
+  optionalSels <- P.many pCommaSepSelectors
+  P.char ']'
+  return $ JSPDescBracketed (sel:optionalSels)
+    where
+      pCommaSepSelectors :: P.Parser JSPSelector
+      pCommaSepSelectors = P.char ',' *> P.spaces *> pJSPSelector
+
+pJSPDescMemberNameSH :: P.Parser JSPDescSegment
+pJSPDescMemberNameSH = do
+  P.string ".."
+  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_$@")
+  return (JSPDescMemberNameSH val)
+
+pJSPDescWildSeg :: P.Parser JSPDescSegment
+pJSPDescWildSeg = JSPDescWildSeg <$> (P.string "..*" $> JSPWildcard)
 
 pSignedInt :: P.Parser Int
 pSignedInt = do
