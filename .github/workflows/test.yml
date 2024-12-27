@@ -1,4 +1,4 @@
-name: Haskell CI
+name: Test
 
 on:
   push:
@@ -7,18 +7,17 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    name: Build and Test
-    runs-on: ubuntu-latest
-    
+  cabal:
+    strategy:
+      matrix:
+        ghc: ['9.4.8','9.6.6','9.8.4','9.10.1']
+    name: Cabal - Linux GHC ${{ matrix.ghc }}
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v3
-    
-    - name: Setup Haskell
-      uses: haskell-actions/setup@v2
+    - uses: haskell-actions/setup@v2
       with:
-        ghc-version: '9.4.5'  # Specify the GHC version you want to use
-        cabal-version: '3.8.1.0'
+        ghc-version: ${{ matrix.ghc }}
     
     - name: Cache dependencies
       uses: actions/cache@v3
@@ -26,15 +25,15 @@ jobs:
         path: |
           ~/.cabal
           dist-newstyle
-        key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}
+        key: cabal-${{ matrix.ghc }}-${{ hashFiles('aeson-jsonpath.cabal') }}
         restore-keys: |
-          ${{ runner.os }}-cabal-
+          cabal-${{ matrix.ghc }}-
     
     - name: Update Cabal package list
       run: cabal v2-update
     
     - name: Build project
       run: cabal v2-build
-    
+
     - name: Run tests
       run: cabal v2-test
