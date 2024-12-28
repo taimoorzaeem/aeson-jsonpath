@@ -15,6 +15,7 @@ import qualified Text.ParserCombinators.Parsec  as P
 
 import Data.Functor                  (($>))
 import Data.Text                     (Text)
+import Data.Char                     (ord)
 import Text.ParserCombinators.Parsec ((<|>))
 
 import Prelude
@@ -65,6 +66,7 @@ pJSPQuery :: P.Parser JSPQuery
 pJSPQuery = do
   P.char '$'
   segs <- P.many pJSPSegment
+  P.eof
   return $ JSPRoot segs
 
 pJSPSelector :: P.Parser JSPSelector
@@ -119,7 +121,8 @@ pJSPChildBracketed =  do
 pJSPChildMemberNameSH :: P.Parser JSPChildSegment
 pJSPChildMemberNameSH = do
   P.char '.'
-  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_$@")
+  P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
+  val <- T.pack <$> P.many1 (P.alphaNum <|> (P.oneOf "-" <|> pUnicodeChar))
   return (JSPChildMemberNameSH val)
 
 pJSPChildWildSeg :: P.Parser JSPChildSegment
@@ -147,7 +150,8 @@ pJSPDescBracketed =  do
 pJSPDescMemberNameSH :: P.Parser JSPDescSegment
 pJSPDescMemberNameSH = do
   P.string ".."
-  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_$@")
+  P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
+  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "-" <|> pUnicodeChar)
   return (JSPDescMemberNameSH val)
 
 pJSPDescWildSeg :: P.Parser JSPDescSegment
@@ -161,3 +165,10 @@ pSignedInt = do
     case sign of
       Just _ -> -1 * num
       Nothing -> num
+
+pUnicodeChar :: P.Parser Char
+pUnicodeChar = P.satisfy inRange
+  where
+    inRange c = let code = ord c in
+      (code >= 0x80 && code <= 0xD7FF) ||
+      (code >= 0xE000 && code <= 0x10FFFF)

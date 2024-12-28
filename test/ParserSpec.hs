@@ -12,6 +12,7 @@ import Data.Aeson.JSONPath.Parser (pJSPQuery
                                   , JSPDescSegment (..)
                                   , JSPSelector (..)
                                   , JSPWildcardT (..))
+import Data.Either                (isLeft)
 import Prelude
 
 spec :: Spec
@@ -55,3 +56,12 @@ spec = do
 
     it "parses query: $..[*]" $
       P.parse pJSPQuery "" "$..[*]" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescBracketed [JSPWildSel JSPWildcard])])
+
+    it "parses query $.hyphen-key" $
+      P.parse pJSPQuery "" "$.hyphen-key" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "hyphen-key")])
+
+    it "fails with $.1startsWithNum" $
+      P.parse pJSPQuery "" "$.1startsWithNum" `shouldSatisfy` isLeft
+
+    it "parses query $.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ" $
+      P.parse pJSPQuery "" "$.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ")])
