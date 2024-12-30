@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         ghc: ['9.4.8','9.6.6','9.8.4','9.10.1']
+      fail-fast: false
     name: Cabal - Linux GHC ${{ matrix.ghc }}
     runs-on: ubuntu-24.04
     steps:
@@ -34,3 +35,27 @@ jobs:
  
     - name: Build project
       run: cabal v2-build
+
+  stack:
+    strategy:
+      matrix:
+        resolver: ['lts-23.2', 'nightly']
+      fail-fast: false
+    name: Stack - Linux Resolver ${{ matrix.resolver }}
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.stack
+        key: stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
+        restore-keys: |
+            stack-${{ matrix.resolver }}-
+
+    - name: Install dependencies for resolver ${{ matrix.resolver }}
+      run: stack setup --resolver ${{ matrix.resolver }}
+
+    - name: Build the project with resolver ${{ matrix.resolver }}
+      run: stack build --resolver ${{ matrix.resolver }}
