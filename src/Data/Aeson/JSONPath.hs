@@ -1,16 +1,14 @@
 module Data.Aeson.JSONPath
-  ( runJSPQuery )
+  ( runJSPQuery
+  , jsonPath)
   where
 
 import qualified Data.Aeson                    as JSON
 import qualified Data.Aeson.Key                as K
 import qualified Data.Aeson.KeyMap             as KM
-import qualified Data.Text                     as T
 import qualified Data.Vector                   as V
 import qualified Text.ParserCombinators.Parsec as P
 
-import Data.Maybe                 (fromMaybe)
-import Data.Text                  (Text)
 import Data.Aeson.JSONPath.Parser (JSPQuery (..)
                                   , JSPSegment (..)
                                   , JSPChildSegment (..)
@@ -18,13 +16,26 @@ import Data.Aeson.JSONPath.Parser (JSPQuery (..)
                                   , JSPSelector (..)
                                   , JSPWildcardT (..)
                                   , pJSPQuery)
+import Data.Maybe                 (fromMaybe)
+import Data.Text                  (Text)
+import Language.Haskell.TH.Quote  (QuasiQuoter (..))
+import Language.Haskell.TH.Syntax (lift)
+
 import Prelude
 
 
-runJSPQuery :: Text -> JSON.Value -> Either P.ParseError JSON.Value
-runJSPQuery query document = do
-  jspath <- P.parse pJSPQuery ("failed to parse query: " <> T.unpack query) (T.unpack query)
-  return $ traverseJSPQuery jspath document
+jsonPath :: QuasiQuoter
+jsonPath = QuasiQuoter
+  { quoteExp = \query -> case P.parse pJSPQuery ("failed to parse query: " <> query) query of
+      Left err -> fail $ show err
+      Right ex -> lift ex
+  , quotePat = error "Error: quotePat"
+  , quoteType = error "Error: quoteType"
+  , quoteDec = error "Error: quoteDec"
+  }
+
+runJSPQuery :: JSPQuery -> JSON.Value -> JSON.Value
+runJSPQuery query document = traverseJSPQuery query document
 
 
 traverseJSPQuery :: JSPQuery -> JSON.Value -> JSON.Value

@@ -1,4 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
 module QuerySpec
   ( spec )
   where
@@ -6,7 +5,7 @@ module QuerySpec
 import qualified Data.Aeson        as JSON
 import qualified Data.Vector       as V
 
-import Data.Aeson.JSONPath  (runJSPQuery)
+import Data.Aeson.JSONPath  (runJSPQuery, jsonPath)
 import Data.Aeson.QQ.Simple (aesonQQ)
 import Test.Hspec
 
@@ -220,50 +219,50 @@ spec :: Spec
 spec = do
   describe "Run JSPQuery on JSON documents" $ do
     it "returns root document when query is $" $
-      runJSPQuery "$" rootDoc `shouldBe` Right rootDoc
+      runJSPQuery [jsonPath|$|] rootDoc `shouldBe` rootDoc
 
     it "returns store object when query is $.store" $
-      runJSPQuery "$.store" rootDoc `shouldBe` Right storeDoc
+      runJSPQuery [jsonPath|$.store|] rootDoc `shouldBe` storeDoc
 
     it "returns books array when query is $.store.books" $
-      runJSPQuery "$.store.books" rootDoc `shouldBe` Right booksDoc
+      runJSPQuery [jsonPath|$.store.books|] rootDoc `shouldBe` booksDoc
 
     it "returns 0-index book item when query is $.store.books[0]" $
-      runJSPQuery "$.store.books[0]" rootDoc `shouldBe` Right books0Doc
+      runJSPQuery [jsonPath|$.store.books[0]|] rootDoc `shouldBe`  books0Doc
 
     it "returns 0-index book item when query is $.store.books[-4]" $
-      runJSPQuery "$.store.books[-4]" rootDoc `shouldBe` Right books0Doc
+      runJSPQuery [jsonPath|$.store.books[-4]|] rootDoc `shouldBe` books0Doc
 
     it "returns 0,2-index item when query is $.store.books[0,2]" $
-      runJSPQuery "$.store.books[0,2]" rootDoc `shouldBe` Right books0And2Doc
+      runJSPQuery [jsonPath|$.store.books[0,2]|] rootDoc `shouldBe` books0And2Doc
 
     it "returns 1To3-index when query is $.store.books[1:3]" $
-      runJSPQuery "$.store.books[1:3]" rootDoc `shouldBe` Right books1To3Doc
+      runJSPQuery [jsonPath|$.store.books[1:3]|] rootDoc `shouldBe` books1To3Doc
 
     it "returns 1To3-index and 0,1-index when query is $.store.books[1:3,0,1]" $
-      runJSPQuery "$.store.books[1:3,0,1]" rootDoc `shouldBe` Right books1To3And0And1Doc
+      runJSPQuery [jsonPath|$.store.books[1:3,0,1]|] rootDoc `shouldBe` books1To3And0And1Doc
 
     it "returns slice with query $[5:]" $
-      runJSPQuery "$[5:]" alphaArr `shouldBe` Right fgArr
+      runJSPQuery [jsonPath|$[5:]|] alphaArr `shouldBe` fgArr
 
     it "returns slice with query $[1:5:2]" $
-      runJSPQuery "$[1:5:2]" alphaArr `shouldBe` Right bdArr
+      runJSPQuery [jsonPath|$[1:5:2]|] alphaArr `shouldBe` bdArr
 
     it "returns slice with query $[5:1:-2]" $
-      runJSPQuery "$[5:1:-2]" alphaArr `shouldBe` Right fdArr
+      runJSPQuery [jsonPath|$[5:1:-2]|] alphaArr `shouldBe` fdArr
 
     it "returns slice with query $[::-1]" $
-      runJSPQuery "$[::-1]" alphaArr `shouldBe` Right gfedcbaArr
+      runJSPQuery [jsonPath|$[::-1]|] alphaArr `shouldBe` gfedcbaArr
 
     it "returns root with query $.*" $
-      runJSPQuery "$.*" rootDoc `shouldBe` Right rootDoc
+      runJSPQuery [jsonPath|$.*|] rootDoc `shouldBe` rootDoc
 
     it "returns root with query $[*]" $
-      runJSPQuery "$[*]" rootDoc `shouldBe` Right (toSingletonArray rootDoc)
+      runJSPQuery [jsonPath|$[*]|] rootDoc `shouldBe` (toSingletonArray rootDoc)
 
     it "returns root with query $..*" $
-      runJSPQuery "$..*" rfcExample1 `shouldBe` Right rfcExample1Desc
+      runJSPQuery [jsonPath|$..*|] rfcExample1 `shouldBe` rfcExample1Desc
 
     it "returns root with query $..[*]" $ do
       pendingWith "fix with wildcard selection"
-      runJSPQuery "$..[*]" rfcExample1 `shouldBe` Right rfcExample1Desc
+      runJSPQuery [jsonPath|$..[*]|] rfcExample1 `shouldBe` rfcExample1Desc
