@@ -22,7 +22,7 @@ import Language.Haskell.TH.Syntax    (Lift (..))
 
 import Prelude
 
-data JSPQuery
+newtype JSPQuery
   = JSPRoot [JSPSegment]
   deriving (Eq, Show, Lift)
 
@@ -78,7 +78,7 @@ pJSPSelector = P.try pJSPNameSel
             <|> P.try pJSPWildSel
 
 pJSPNameSel :: P.Parser JSPSelector
-pJSPNameSel = JSPNameSel <$> T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
+pJSPNameSel = JSPNameSel . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
 
 pJSPIndexSel :: P.Parser JSPSelector
 pJSPIndexSel = do
@@ -101,7 +101,7 @@ pJSPWildSel :: P.Parser JSPSelector
 pJSPWildSel = JSPWildSel <$> (P.char '*' $> JSPWildcard)
 
 pJSPSegment :: P.Parser JSPSegment
-pJSPSegment = (pJSPChildSegment <|> pJSPDescSegment)
+pJSPSegment = pJSPChildSegment <|> pJSPDescSegment
 
 pJSPChildSegment :: P.Parser JSPSegment
 pJSPChildSegment = 
@@ -165,7 +165,7 @@ pSignedInt = do
   num <- read <$> P.many1 P.digit
   return $ 
     case sign of
-      Just _ -> -1 * num
+      Just _ -> -num
       Nothing -> num
 
 pUnicodeChar :: P.Parser Char
