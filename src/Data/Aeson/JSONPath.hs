@@ -35,16 +35,15 @@ jsonPath = QuasiQuoter
   }
 
 runJSPQuery :: JSPQuery -> JSON.Value -> JSON.Value
-runJSPQuery query document = traverseJSPQuery query document
+runJSPQuery = traverseJSPQuery
 
 
 traverseJSPQuery :: JSPQuery -> JSON.Value -> JSON.Value
-traverseJSPQuery (JSPRoot segs) doc = traverseJSPSegments segs doc
+traverseJSPQuery (JSPRoot segs) = traverseJSPSegments segs
 
 
 traverseJSPSegments :: [JSPSegment] -> JSON.Value -> JSON.Value
-traverseJSPSegments [] doc = doc
-traverseJSPSegments (x:xs) doc = traverseJSPSegments xs (traverseJSPSegment x doc)
+traverseJSPSegments xs doc = foldl (flip traverseJSPSegment) doc xs
 
 
 traverseJSPSegment :: JSPSegment -> JSON.Value -> JSON.Value
@@ -67,7 +66,7 @@ traverseJSPDescSeg (JSPDescWildSeg JSPWildcard) doc = JSON.Array $ allElemsRecur
 -- TODO: Clean this super messy code, might require some refactoring
 traverseDescMembers :: Text -> JSON.Value -> JSON.Value
 traverseDescMembers key (JSON.Object obj) = JSON.Array $ V.concat [
-    (maybe V.empty V.singleton $ KM.lookup (K.fromText key) obj),
+    maybe V.empty V.singleton $ KM.lookup (K.fromText key) obj,
     V.map (traverseDescMembers key) (allElemsRecursive (JSON.Array $ V.fromList $ KM.elems obj))
   ]
 traverseDescMembers key ar@(JSON.Array _) = JSON.Array $ V.map (traverseDescMembers key) (allElemsRecursive ar)
@@ -81,7 +80,7 @@ traverseJSPSelectors sels doc = JSON.Array $ V.concat $ map traverse' sels
 traverseJSPSelector :: JSPSelector -> JSON.Value -> V.Vector JSON.Value
 traverseJSPSelector (JSPNameSel key) (JSON.Object obj) = maybe V.empty V.singleton $ KM.lookup (K.fromText key) obj
 traverseJSPSelector (JSPNameSel _) _ = V.empty
-traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = maybe V.empty V.singleton $ (if idx >= 0 then (V.!?) arr idx else (V.!?) arr (idx + V.length arr))
+traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = maybe V.empty V.singleton (if idx >= 0 then (V.!?) arr idx else (V.!?) arr (idx + V.length arr))
 traverseJSPSelector (JSPIndexSel _) _ = V.empty
 traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceSelector sliceVals arr
 traverseJSPSelector (JSPSliceSel _) _ = V.empty
@@ -116,7 +115,7 @@ traverseJSPSliceSelector (start, end, step) doc = getSlice start end step doc
     filterSlice slice 1   = slice
     filterSlice slice (-1) = V.reverse slice
     filterSlice slice n = if n < 0 then
-          V.ifilter (\i _ -> i `mod` (-1 * n) == 0) $ V.reverse $ V.drop (V.length slice `mod` (-1 * n)) slice
+          V.ifilter (\i _ -> i `mod` (-n) == 0) $ V.reverse $ V.drop (V.length slice `mod` (-n)) slice
         else
           V.ifilter (\i _ -> i `mod` n == 0) slice
 
@@ -124,11 +123,11 @@ emptyJSArray :: JSON.Value
 emptyJSArray = JSON.Array V.empty
 
 allElemsRecursive :: JSON.Value -> V.Vector JSON.Value
-allElemsRecursive (JSON.Object obj) = V.concat $ [
+allElemsRecursive (JSON.Object obj) = V.concat [
     V.fromList (KM.elems obj),
     V.concat $ map allElemsRecursive (KM.elems obj)
   ]
-allElemsRecursive (JSON.Array arr) = V.concat $ [
+allElemsRecursive (JSON.Array arr) = V.concat [
     arr,
     V.concat $ map allElemsRecursive (V.toList arr)
   ]
