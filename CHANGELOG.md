@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0.0
 
 - Remove dependency on `protolude`
 - Fix parsing bug with Wildcard Selector
