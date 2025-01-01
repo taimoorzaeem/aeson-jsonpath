@@ -12,10 +12,11 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
   - [x] Slice Selector
   - [x] Wildcard Selector
   - [ ] Filter Selector
-- [ ] Segments
+- [x] Segments
   - [x] Child Segment
-  - [ ] Descendant Segment
+  - [x] Descendant Segment
 - [ ] Function Extensions
+- [ ] Setting Values (Non-RFC)
 
 ## Why use this?
 
@@ -23,22 +24,24 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
 - The parser is written in an extendable way and hence it will be able to provide newer features in our future releases possibly without any breaking changes.
 
 ```haskell
+{-# LANGUAGE QuasiQuotes #-}
 import Data.Aeson          (Value (..))
-import Data.Aeson.JSONPath (runJSPQuery)
+import Data.Aeson.JSONPath (runJSPQuery, jsonPath)
 
 jsonDoc :: Value -- aeson value
 
--- currently supported queries are:
-runJSPQuery "$" jsonDoc
-runJSPQuery "$.*" jsonDoc -- supports wildcard operator
-runJSPQuery "$.store" jsonDoc -- supports member name shorthand
-runJSPQuery "$.store.books" jsonDoc
-runJSPQuery "$.store.books[0]" jsonDoc
-runJSPQuery "$.store.books[-4]" jsonDoc -- supports negative index
-runJSPQuery "$.store.books[1:4:-1]" jsonDoc -- suports slicing with negative step
-runJSPQuery "$.store.books[1,2:5,7]" jsonDoc -- supports multiple selectors
+-- usage example
+runJSPQuery [jsonPath|$|] jsonDoc
+runJSPQuery [jsonPath|$.*|] jsonDoc
+runJSPQuery [jsonPath|$..*|] jsonDoc
+runJSPQuery [jsonPath|$.store|] jsonDoc
+runJSPQuery [jsonPath|$.store.books|] jsonDoc
+runJSPQuery [jsonPath|$.store.books[0]|] jsonDoc
+runJSPQuery [jsonPath|$.store.books[-4]|] jsonDoc
+runJSPQuery [jsonPath|$.store.books[1:4:-1]|] jsonDoc
+runJSPQuery [jsonPath|$.store.books[1,2:5,7]|] jsonDoc
 ```
 
 ## Development
 
-Please report any bugs you encounter. Contributions are welcomed.
+Please report any bugs you encounter by opening an issue. Contributions are welcomed.
