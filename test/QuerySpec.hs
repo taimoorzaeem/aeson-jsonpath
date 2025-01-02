@@ -260,9 +260,9 @@ spec = do
     it "returns root with query $[*]" $
       runJSPQuery [jsonPath|$[*]|] rootDoc `shouldBe` (toSingletonArray rootDoc)
 
-    it "returns root with query $..*" $
+    it "returns descendants with query $..*" $
       runJSPQuery [jsonPath|$..*|] rfcExample1 `shouldBe` rfcExample1Desc
 
-    it "returns root with query $..[*]" $ do
+    it "returns descendants with query $..[*]" $ do
       pendingWith "fix with wildcard selection"
       runJSPQuery [jsonPath|$..[*]|] rfcExample1 `shouldBe` rfcExample1Desc

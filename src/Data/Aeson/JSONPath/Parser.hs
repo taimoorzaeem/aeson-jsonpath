@@ -66,8 +66,10 @@ type JSPSliceSelector = (Maybe Int, Maybe Int, Int)
 
 pJSPQuery :: P.Parser JSPQuery
 pJSPQuery = do
+  P.spaces
   P.char '$'
   segs <- P.many pJSPSegment
+  P.spaces
   P.eof
   return $ JSPRoot segs
 
@@ -124,7 +126,7 @@ pJSPChildMemberNameSH :: P.Parser JSPChildSegment
 pJSPChildMemberNameSH = do
   P.char '.'
   P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
-  val <- T.pack <$> P.many1 (P.alphaNum <|> (P.oneOf "-" <|> pUnicodeChar))
+  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "-" <|> pUnicodeChar)
   return (JSPChildMemberNameSH val)
 
 pJSPChildWildSeg :: P.Parser JSPChildSegment

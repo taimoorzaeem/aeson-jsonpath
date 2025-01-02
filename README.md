@@ -1,6 +1,6 @@
 # aeson-jsonpath
 
-![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg?event=push) ![hackage-docs](https://img.shields.io/badge/hackage-v0.1.0.0-blue)
+![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg?event=push) [![hackage-docs](https://img.shields.io/badge/hackage-v0.2.0.0-blue)](https://hackage.haskell.org/package/aeson-jsonpath)
 
 Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson).
 
