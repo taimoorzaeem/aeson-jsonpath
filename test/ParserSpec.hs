@@ -65,3 +65,6 @@ spec = do
 
     it "parses query $.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ" $
       P.parse pJSPQuery "" "$.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ")])
+
+    it "parses query with spaces around" $
+      P.parse pJSPQuery "" "  $.key  " `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "key")])

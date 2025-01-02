@@ -1,3 +1,7 @@
+## Unreleased
+
+- Allow spaces around the JSONPath query
+
 ## 0.2.0.0
 
 - Remove dependency on `protolude`
