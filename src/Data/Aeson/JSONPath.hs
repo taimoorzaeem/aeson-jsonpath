@@ -9,18 +9,18 @@ import qualified Data.Aeson.KeyMap             as KM
 import qualified Data.Vector                   as V
 import qualified Text.ParserCombinators.Parsec as P
 
-import Data.Aeson.JSONPath.Parser (JSPQuery (..)
-                                  , JSPSegment (..)
-                                  , JSPChildSegment (..)
-                                  , JSPDescSegment (..)
-                                  , JSPSelector (..)
-                                  , JSPWildcardT (..)
-                                  , pJSPQuery)
-import Data.Maybe                 (fromMaybe)
-import Data.Text                  (Text)
-import Data.Vector                (Vector)
-import Language.Haskell.TH.Quote  (QuasiQuoter (..))
-import Language.Haskell.TH.Syntax (lift)
+import Data.Aeson.JSONPath.Types    (JSPQuery (..)
+                                    , JSPSegment (..)
+                                    , JSPChildSegment (..)
+                                    , JSPDescSegment (..)
+                                    , JSPSelector (..)
+                                    , JSPWildcardT (..))
+import Data.Aeson.JSONPath.Parser   (pJSPQuery)
+import Data.Maybe                   (fromMaybe)
+import Data.Text                    (Text)
+import Data.Vector                  (Vector)
+import Language.Haskell.TH.Quote    (QuasiQuoter (..))
+import Language.Haskell.TH.Syntax   (lift)
 
 import Prelude
 

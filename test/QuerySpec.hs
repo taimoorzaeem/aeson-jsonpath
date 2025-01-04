@@ -226,6 +226,9 @@ spec = do
     it "returns store object when query is $.store" $
       query [jsonPath|$.store|] rootDoc `shouldBe` V.singleton storeDoc
 
+    it "returns store object when query is $['store']" $
+      query [jsonPath|$['store']|] rootDoc `shouldBe` V.singleton storeDoc
+
     it "returns books array when query is $.store.books" $
       query [jsonPath|$.store.books|] rootDoc `shouldBe` getVector booksDoc
 
