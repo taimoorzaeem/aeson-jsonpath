@@ -5,8 +5,8 @@ module ParserSpec
 import qualified Text.ParserCombinators.Parsec as P
 import Test.Hspec
 
-import Data.Aeson.JSONPath.Parser (pJSPQuery
-                                  , JSPQuery (..)
+import Data.Aeson.JSONPath.Parser (pJSPQuery)
+import Data.Aeson.JSONPath.Types  (JSPQuery (..)
                                   , JSPSegment (..)
                                   , JSPChildSegment (..)
                                   , JSPDescSegment (..)
@@ -23,6 +23,9 @@ spec = do
 
     it "parses query: $.store" $
       P.parse pJSPQuery "" "$.store" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store")])
+
+    it "parses query: $['store']" $
+      P.parse pJSPQuery "" "$['store']" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildBracketed [JSPNameSel "store"])])
 
     it "parses query: $.store.books" $
       P.parse pJSPQuery "" "$.store.books" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books")])
