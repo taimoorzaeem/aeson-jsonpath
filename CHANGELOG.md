@@ -1,6 +1,7 @@
 ## Unreleased
 
 - Allow spaces around the JSONPath query
+- Always return `Vector Value` and rename `runJSPQuery` to `query`
 
 ## 0.2.0.0
 

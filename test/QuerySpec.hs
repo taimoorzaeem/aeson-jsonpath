@@ -5,14 +5,16 @@ module QuerySpec
 import qualified Data.Aeson        as JSON
 import qualified Data.Vector       as V
 
-import Data.Aeson.JSONPath  (runJSPQuery, jsonPath)
+import Data.Aeson.JSONPath  (query, jsonPath)
 import Data.Aeson.QQ.Simple (aesonQQ)
+import Data.Vector          (Vector)
 import Test.Hspec
 
 import Prelude
 
-toSingletonArray :: JSON.Value -> JSON.Value
-toSingletonArray = JSON.Array . V.singleton
+getVector :: JSON.Value -> Vector JSON.Value
+getVector (JSON.Array arr) = arr
+getVector _ = V.empty
 
 -- taken from https://serdejsonpath.live/
 rootDoc :: JSON.Value
@@ -219,50 +221,49 @@ spec :: Spec
 spec = do
   describe "Run JSPQuery on JSON documents" $ do
     it "returns root document when query is $" $
-      runJSPQuery [jsonPath|$|] rootDoc `shouldBe` rootDoc
+      query [jsonPath|$|] rootDoc `shouldBe` V.singleton rootDoc
 
     it "returns store object when query is $.store" $
-      runJSPQuery [jsonPath|$.store|] rootDoc `shouldBe` storeDoc
+      query [jsonPath|$.store|] rootDoc `shouldBe` V.singleton storeDoc
 
     it "returns books array when query is $.store.books" $
-      runJSPQuery [jsonPath|$.store.books|] rootDoc `shouldBe` booksDoc
+      query [jsonPath|$.store.books|] rootDoc `shouldBe` getVector booksDoc
 
     it "returns 0-index book item when query is $.store.books[0]" $
-      runJSPQuery [jsonPath|$.store.books[0]|] rootDoc `shouldBe`  books0Doc
+      query [jsonPath|$.store.books[0]|] rootDoc `shouldBe` getVector books0Doc
 
     it "returns 0-index book item when query is $.store.books[-4]" $
-      runJSPQuery [jsonPath|$.store.books[-4]|] rootDoc `shouldBe` books0Doc
+      query [jsonPath|$.store.books[-4]|] rootDoc `shouldBe` getVector books0Doc
 
     it "returns 0,2-index item when query is $.store.books[0,2]" $
-      runJSPQuery [jsonPath|$.store.books[0,2]|] rootDoc `shouldBe` books0And2Doc
+      query [jsonPath|$.store.books[0,2]|] rootDoc `shouldBe` getVector books0And2Doc
 
     it "returns 1To3-index when query is $.store.books[1:3]" $
-      runJSPQuery [jsonPath|$.store.books[1:3]|] rootDoc `shouldBe` books1To3Doc
+      query [jsonPath|$.store.books[1:3]|] rootDoc `shouldBe` getVector books1To3Doc
 
     it "returns 1To3-index and 0,1-index when query is $.store.books[1:3,0,1]" $
-      runJSPQuery [jsonPath|$.store.books[1:3,0,1]|] rootDoc `shouldBe` books1To3And0And1Doc
+      query [jsonPath|$.store.books[1:3,0,1]|] rootDoc `shouldBe` getVector books1To3And0And1Doc
 
     it "returns slice with query $[5:]" $
-      runJSPQuery [jsonPath|$[5:]|] alphaArr `shouldBe` fgArr
+      query [jsonPath|$[5:]|] alphaArr `shouldBe` getVector fgArr
 
     it "returns slice with query $[1:5:2]" $
-      runJSPQuery [jsonPath|$[1:5:2]|] alphaArr `shouldBe` bdArr
+      query [jsonPath|$[1:5:2]|] alphaArr `shouldBe` getVector bdArr
 
     it "returns slice with query $[5:1:-2]" $
-      runJSPQuery [jsonPath|$[5:1:-2]|] alphaArr `shouldBe` fdArr
+      query [jsonPath|$[5:1:-2]|] alphaArr `shouldBe` getVector fdArr
 
     it "returns slice with query $[::-1]" $
-      runJSPQuery [jsonPath|$[::-1]|] alphaArr `shouldBe` gfedcbaArr
+      query [jsonPath|$[::-1]|] alphaArr `shouldBe` getVector gfedcbaArr
 
     it "returns root with query $.*" $
-      runJSPQuery [jsonPath|$.*|] rootDoc `shouldBe` rootDoc
+      query [jsonPath|$.*|] rootDoc `shouldBe` V.singleton rootDoc
 
     it "returns root with query $[*]" $
-      runJSPQuery [jsonPath|$[*]|] rootDoc `shouldBe` (toSingletonArray rootDoc)
+      query [jsonPath|$[*]|] rootDoc `shouldBe` V.singleton rootDoc
 
     it "returns descendants with query $..*" $
-      runJSPQuery [jsonPath|$..*|] rfcExample1 `shouldBe` rfcExample1Desc
+      query [jsonPath|$..*|] rfcExample1 `shouldBe` getVector rfcExample1Desc
 
-    it "returns descendants with query $..[*]" $ do
-      pendingWith "fix with wildcard selection"
-      runJSPQuery [jsonPath|$..[*]|] rfcExample1 `shouldBe` rfcExample1Desc
+    it "returns descendants with query $..[*]" $
+      query [jsonPath|$..[*]|] rfcExample1 `shouldBe` getVector rfcExample1Desc

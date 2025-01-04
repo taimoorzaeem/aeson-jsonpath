@@ -1,5 +1,5 @@
 module Data.Aeson.JSONPath
-  ( runJSPQuery
+  ( query
   , jsonPath)
   where
 
@@ -18,6 +18,7 @@ import Data.Aeson.JSONPath.Parser (JSPQuery (..)
                                   , pJSPQuery)
 import Data.Maybe                 (fromMaybe)
 import Data.Text                  (Text)
+import Data.Vector                (Vector)
 import Language.Haskell.TH.Quote  (QuasiQuoter (..))
 import Language.Haskell.TH.Syntax (lift)
 
@@ -26,7 +27,7 @@ import Prelude
 
 jsonPath :: QuasiQuoter
 jsonPath = QuasiQuoter
-  { quoteExp = \query -> case P.parse pJSPQuery ("failed to parse query: " <> query) query of
+  { quoteExp = \q -> case P.parse pJSPQuery ("failed to parse query: " <> q) q of
       Left err -> fail $ show err
       Right ex -> lift ex
   , quotePat = error "Error: quotePat"
@@ -34,16 +35,20 @@ jsonPath = QuasiQuoter
   , quoteDec = error "Error: quoteDec"
   }
 
-runJSPQuery :: JSPQuery -> JSON.Value -> JSON.Value
-runJSPQuery = traverseJSPQuery
+
+query :: JSPQuery -> JSON.Value -> Vector JSON.Value
+query (JSPRoot segs) = traverseJSPSegments segs
 
 
-traverseJSPQuery :: JSPQuery -> JSON.Value -> JSON.Value
-traverseJSPQuery (JSPRoot segs) = traverseJSPSegments segs
-
-
-traverseJSPSegments :: [JSPSegment] -> JSON.Value -> JSON.Value
-traverseJSPSegments xs doc = foldl (flip traverseJSPSegment) doc xs
+traverseJSPSegments :: [JSPSegment] -> JSON.Value -> Vector JSON.Value
+traverseJSPSegments xs doc =
+  case foldl (flip traverseJSPSegment) doc xs of
+    o@(JSON.Object _) -> V.singleton o
+    (JSON.Array arr) -> arr
+    n@(JSON.Number _) -> V.singleton n
+    s@(JSON.String _) -> V.singleton s
+    b@(JSON.Bool _) -> V.singleton b
+    JSON.Null -> V.singleton JSON.Null
 
 
 traverseJSPSegment :: JSPSegment -> JSON.Value -> JSON.Value
@@ -59,7 +64,7 @@ traverseJSPChildSeg (JSPChildWildSeg JSPWildcard) doc = doc
 
 
 traverseJSPDescSeg :: JSPDescSegment -> JSON.Value -> JSON.Value
-traverseJSPDescSeg (JSPDescBracketed sels) doc = JSON.Array $ V.map (traverseJSPSelectors sels) (allElemsRecursive doc)
+traverseJSPDescSeg (JSPDescBracketed sels) doc = traverseJSPSelectors sels $ JSON.Array $ allElemsRecursive doc
 traverseJSPDescSeg (JSPDescMemberNameSH key) doc = traverseDescMembers key doc
 traverseJSPDescSeg (JSPDescWildSeg JSPWildcard) doc = JSON.Array $ allElemsRecursive doc
 
@@ -77,18 +82,18 @@ traverseJSPSelectors sels doc = JSON.Array $ V.concat $ map traverse' sels
   where
     traverse' = flip traverseJSPSelector doc
 
-traverseJSPSelector :: JSPSelector -> JSON.Value -> V.Vector JSON.Value
+traverseJSPSelector :: JSPSelector -> JSON.Value -> Vector JSON.Value
 traverseJSPSelector (JSPNameSel key) (JSON.Object obj) = maybe V.empty V.singleton $ KM.lookup (K.fromText key) obj
 traverseJSPSelector (JSPNameSel _) _ = V.empty
 traverseJSPSelector (JSPIndexSel idx) (JSON.Array arr) = maybe V.empty V.singleton (if idx >= 0 then (V.!?) arr idx else (V.!?) arr (idx + V.length arr))
 traverseJSPSelector (JSPIndexSel _) _ = V.empty
 traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceSelector sliceVals arr
 traverseJSPSelector (JSPSliceSel _) _ = V.empty
--- This does not work right with descendant segment, fix it later
+traverseJSPSelector (JSPWildSel JSPWildcard) (JSON.Array arr) = arr -- if array return the vector
 traverseJSPSelector (JSPWildSel JSPWildcard) doc = V.singleton doc
 
 
-traverseJSPSliceSelector :: (Maybe Int, Maybe Int, Int) -> JSON.Array -> V.Vector JSON.Value
+traverseJSPSliceSelector :: (Maybe Int, Maybe Int, Int) -> JSON.Array -> Vector JSON.Value
 traverseJSPSliceSelector (start, end, step) doc = getSlice start end step doc
   where
     -- TODO: Refactor this code to make it more pretty
@@ -122,7 +127,7 @@ traverseJSPSliceSelector (start, end, step) doc = getSlice start end step doc
 emptyJSArray :: JSON.Value
 emptyJSArray = JSON.Array V.empty
 
-allElemsRecursive :: JSON.Value -> V.Vector JSON.Value
+allElemsRecursive :: JSON.Value -> Vector JSON.Value
 allElemsRecursive (JSON.Object obj) = V.concat [
     V.fromList (KM.elems obj),
     V.concat $ map allElemsRecursive (KM.elems obj)
