@@ -2,7 +2,8 @@ name:               aeson-jsonpath
 version:            0.3.0.0
 synopsis:           Parse and run JSONPath queries on Aeson documents
 description:        RFC 9535 compliant JSONPath parsing and querying
-                    package. JSONPath is similar to XPath for querying XML documents.
+                    package. JSONPath is similar to XPath for querying
+                    XML documents.
 license:            MIT
 license-file:       LICENSE
 author:             Taimoor Zaeem
@@ -36,6 +37,7 @@ library
   build-depends:      aeson                     >= 2.0.3 && < 2.3
                     , base                      >= 4.9 && < 4.22
                     , parsec                    >= 3.1.11 && < 3.2
+                    , scientific                >= 0.3.4 && < 0.4
                     , template-haskell          >= 2.12 && < 2.24
                     , text                      >= 1.2.2 && < 2.2
                     , vector                    >= 0.11 && < 0.14

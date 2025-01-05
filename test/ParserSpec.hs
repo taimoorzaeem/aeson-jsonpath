@@ -11,7 +11,18 @@ import Data.Aeson.JSONPath.Types  (JSPQuery (..)
                                   , JSPChildSegment (..)
                                   , JSPDescSegment (..)
                                   , JSPSelector (..)
-                                  , JSPWildcardT (..))
+                                  , JSPWildcardT (..)
+                                  , JSPLogicalExpr (..)
+                                  , JSPLogicalAndExpr (..)
+                                  , JSPBasicExpr (..)
+                                  , JSPParenExpr (..)
+                                  , JSPTestExpr (..)
+                                  , JSPFilterQuery (..)
+                                  , JSPComparisonExpr (..)
+                                  , JSPComparable (..)
+                                  , JSPComparisonOp (..)
+                                  , JSPSingularQuery (..)
+                                  , JSPSingleQSegment (..))
 import Data.Either                (isLeft)
 import Prelude
 
@@ -71,3 +82,25 @@ spec = do
 
     it "parses query with spaces around" $
       P.parse pJSPQuery "" "  $.key  " `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "key")])
+
+    describe "parses JSPFilter Query" $ do
+      it "$..books[?@.category == 'reference'].*" $
+        P.parse pJSPQuery "" "$..books[?@.category == 'reference'].*" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "category"])) JSPEqual (JSPCompLitString "reference"))]])]),JSPChildSeg (JSPChildWildSeg JSPWildcard)])
+
+      it "test expr: $..books[?@.price].title" $
+        P.parse pJSPQuery "" "$..books[?@.price].title" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPTest (JSPTestTrue (JSPFilterRelQ [JSPChildSeg (JSPChildMemberNameSH "price")]))]])]),JSPChildSeg (JSPChildMemberNameSH "title")])
+
+      it "and expr: $.store.books[?@.price < 20 && @.price > 10]" $
+        P.parse pJSPQuery "" "$.store.books[?@.price < 20 && @.price > 10]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"),JSPChildSeg (JSPChildMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 20.0)),JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 10.0))]])])])
+
+      it "or expr: $.store.books[?@.price < 20 || @.price > 10]" $
+        P.parse pJSPQuery "" "$.store.books[?@.price < 20 || @.price > 10]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"),JSPChildSeg (JSPChildMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 20.0))],JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 10.0))]])])])
+
+      it "root filter: $.store.books[?$.price].title" $
+        P.parse pJSPQuery "" "$.store.books[?$.price].title" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPTest (JSPTestTrue (JSPFilterRootQ [JSPChildSeg (JSPChildMemberNameSH "price")]))]])]), JSPChildSeg (JSPChildMemberNameSH "title")])
+
+      it "not expr: $.store.books[?!(@.price < 20 && @.price > 10)]" $
+        P.parse pJSPQuery "" "$.store.books[?!(@.price < 20 && @.price > 10)]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"),JSPChildSeg (JSPChildMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPParen (JSPParenFalse (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 20.0)),JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 10.0))]]))]])])])
+
+      it "scientific: $.store.books[?@.price < -1e20]" $
+        P.parse pJSPQuery "" "$.store.books[?@['price'] < -1e20]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum (-1.0e20)))]])])])
