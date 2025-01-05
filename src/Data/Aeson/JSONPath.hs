@@ -91,6 +91,7 @@ traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceS
 traverseJSPSelector (JSPSliceSel _) _ = V.empty
 traverseJSPSelector (JSPWildSel JSPWildcard) (JSON.Array arr) = arr -- if array return the vector
 traverseJSPSelector (JSPWildSel JSPWildcard) doc = V.singleton doc
+traverseJSPSelector (JSPFilterSel _) doc = V.singleton doc -- implement later
 
 
 traverseJSPSliceSelector :: (Maybe Int, Maybe Int, Int) -> JSON.Array -> Vector JSON.Value

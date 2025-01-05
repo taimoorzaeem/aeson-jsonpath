@@ -12,9 +12,21 @@ import Data.Aeson.JSONPath.Types     (JSPQuery (..)
                                      , JSPDescSegment (..)
                                      , JSPSelector (..)
                                      , JSPWildcardT (..)
-                                     )
+                                     , JSPLogicalExpr (..)
+                                     , JSPLogicalAndExpr (..)
+                                     , JSPBasicExpr (..)
+                                     , JSPParenExpr (..)
+                                     , JSPTestExpr (..)
+                                     , JSPFilterQuery (..)
+                                     , JSPComparisonExpr (..)
+                                     , JSPComparable (..)
+                                     , JSPComparisonOp (..)
+                                     , JSPSingularQuery (..)
+                                     , JSPSingleQSegment (..))
 import Data.Functor                  (($>))
 import Data.Char                     (ord)
+import Data.Maybe                    (isJust, fromMaybe)
+import Data.Scientific               (Scientific, scientific)
 import Text.ParserCombinators.Parsec ((<|>))
 
 import Prelude
@@ -33,6 +45,7 @@ pJSPSelector = P.try pJSPNameSel
             <|> P.try pJSPIndexSel
             <|> P.try pJSPSliceSel 
             <|> P.try pJSPWildSel
+            <|> P.try pJSPFilterSel
 
 pJSPNameSel :: P.Parser JSPSelector
 pJSPNameSel = JSPNameSel . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
@@ -56,6 +69,12 @@ pJSPSliceSel = do
 
 pJSPWildSel :: P.Parser JSPSelector
 pJSPWildSel = JSPWildSel <$> (P.char '*' $> JSPWildcard)
+
+pJSPFilterSel :: P.Parser JSPSelector
+pJSPFilterSel = do
+  P.char '?'
+  P.spaces
+  JSPFilterSel <$> pJSPLogicalExpr
 
 pJSPSegment :: P.Parser JSPSegment
 pJSPSegment = pJSPChildSegment <|> pJSPDescSegment
@@ -116,6 +135,129 @@ pJSPDescMemberNameSH = do
 pJSPDescWildSeg :: P.Parser JSPDescSegment
 pJSPDescWildSeg = JSPDescWildSeg <$> (P.string "..*" $> JSPWildcard)
 
+pJSPLogicalExpr :: P.Parser JSPLogicalExpr
+pJSPLogicalExpr = do
+  expr <- pJSPLogicalAndExpr
+  optionalExprs <- P.many pOrSepLogicalAndExprs
+  return $ JSPLogicalOr (expr:optionalExprs)
+    where
+      pOrSepLogicalAndExprs :: P.Parser JSPLogicalAndExpr
+      pOrSepLogicalAndExprs = P.try $ P.spaces *> P.string "||" *> P.spaces *> pJSPLogicalAndExpr
+
+pJSPLogicalAndExpr :: P.Parser JSPLogicalAndExpr
+pJSPLogicalAndExpr = do
+  expr <- pJSPBasicExpr
+  optionalExprs <- P.many pAndSepBasicExprs
+  return $ JSPLogicalAnd (expr:optionalExprs)
+    where
+      pAndSepBasicExprs :: P.Parser JSPBasicExpr
+      pAndSepBasicExprs = P.try $ P.spaces *> P.string "&&" *> P.spaces *> pJSPBasicExpr
+
+pJSPBasicExpr :: P.Parser JSPBasicExpr
+pJSPBasicExpr = P.try pJSPParenExpr
+             <|> P.try pJSPComparisonExpr
+             <|> P.try pJSPTestExpr
+
+pJSPParenExpr :: P.Parser JSPBasicExpr
+pJSPParenExpr = do
+  notOp <- P.optionMaybe (P.char '!' <* P.spaces)
+  P.char '('
+  P.spaces
+  expr <- pJSPLogicalExpr
+  P.spaces
+  P.char ')'
+  let parenExp = if isJust notOp then JSPParenFalse expr else JSPParenTrue expr
+  return $ JSPParen parenExp
+
+pJSPTestExpr :: P.Parser JSPBasicExpr
+pJSPTestExpr = do
+  notOp <- P.optionMaybe (P.char '!' <* P.spaces)
+  q <- pJSPFilterQuery
+  let testExp = if isJust notOp then JSPTestFalse q else JSPTestTrue q
+  return $ JSPTest testExp
+
+pJSPFilterQuery :: P.Parser JSPFilterQuery
+pJSPFilterQuery = P.try pJSPRelQuery <|> P.try pJSPRootQuery
+
+pJSPRelQuery :: P.Parser JSPFilterQuery
+pJSPRelQuery = do
+  P.char '@'
+  segs <- P.many pJSPSegment
+  return $ JSPFilterRelQ segs
+
+pJSPRootQuery :: P.Parser JSPFilterQuery
+pJSPRootQuery = do
+  P.char '$'
+  segs <- P.many pJSPSegment
+  return $ JSPFilterRootQ segs
+
+pJSPComparisonExpr :: P.Parser JSPBasicExpr
+pJSPComparisonExpr = do
+  leftC <- pJSPComparable
+  P.spaces
+  compOp <- pJSPComparisonOp
+  P.spaces
+  JSPComparison . JSPComp leftC compOp <$> pJSPComparable
+
+pJSPComparisonOp :: P.Parser JSPComparisonOp
+pJSPComparisonOp = P.try (P.string ">=" $> JSPGreaterOrEqual)
+                <|> P.try (P.string "<=" $> JSPLessOrEqual)
+                <|> P.try (P.char '>' $> JSPLess)
+                <|> P.try (P.char '<' $> JSPGreater)
+                <|> P.try (P.string "!=" $> JSPNotEqual)
+                <|> P.try (P.string "==" $> JSPEqual)
+
+pJSPComparable :: P.Parser JSPComparable
+pJSPComparable = P.try pJSPCompLitString
+              <|> P.try pJSPCompLitNum
+              <|> P.try pJSPCompSQ
+
+pJSPCompLitString :: P.Parser JSPComparable
+pJSPCompLitString = JSPCompLitString . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
+
+pJSPCompLitNum :: P.Parser JSPComparable
+pJSPCompLitNum = JSPCompLitNum <$> pScientific
+
+pJSPCompSQ :: P.Parser JSPComparable
+pJSPCompSQ = JSPCompSQ <$> (P.try pJSPRelSingleQ <|> P.try pJSPAbsSingleQ)
+
+pJSPRelSingleQ :: P.Parser JSPSingularQuery
+pJSPRelSingleQ = do
+  P.char '@'
+  segs <- P.many pJSPSingleQSegment
+  return $ JSPRelSingleQ segs
+
+pJSPAbsSingleQ :: P.Parser JSPSingularQuery
+pJSPAbsSingleQ = do
+  P.char '$'
+  segs <- P.many pJSPSingleQSegment
+  return $ JSPAbsSingleQ segs
+
+pJSPSingleQSegment :: P.Parser JSPSingleQSegment
+pJSPSingleQSegment = P.try pJSPSingleQNameSeg <|> P.try pJSPSingleQIndexSeg
+
+pJSPSingleQNameSeg :: P.Parser JSPSingleQSegment
+pJSPSingleQNameSeg = P.try pSingleQNameBracketed <|> P.try pSingleQNameDotted
+  where
+    pSingleQNameBracketed = do
+      P.char '['
+      name <- T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
+      P.char ']'
+      return $ JSPSingleQNameSeg name
+
+    pSingleQNameDotted = do
+      P.char '.'
+      P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
+      name <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "-" <|> pUnicodeChar)
+      return $ JSPSingleQNameSeg name
+
+pJSPSingleQIndexSeg :: P.Parser JSPSingleQSegment
+pJSPSingleQIndexSeg = do
+  P.char '['
+  num <- pSignedInt
+  P.char ']'
+  return $ JSPSingleQIndexSeg num
+
 pSignedInt :: P.Parser Int
 pSignedInt = do
   sign <- P.optionMaybe $ P.char '-'
@@ -124,6 +266,21 @@ pSignedInt = do
     case sign of
       Just _ -> -num
       Nothing -> num
+
+pSignedInteger :: P.Parser Integer
+pSignedInteger = do
+  sign <- P.optionMaybe $ P.char '-'
+  num <- read <$> P.many1 P.digit
+  return $
+    case sign of
+      Just _ -> -num
+      Nothing -> num
+
+pScientific :: P.Parser Scientific
+pScientific = do
+  integer <- pSignedInteger
+  int <- P.optionMaybe (P.char 'e' *> pSignedInt)
+  return $ scientific integer (fromMaybe 0 int)
 
 pUnicodeChar :: P.Parser Char
 pUnicodeChar = P.satisfy inRange
