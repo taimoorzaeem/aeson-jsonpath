@@ -100,8 +100,8 @@ pJSPChildBracketed =  do
 pJSPChildMemberNameSH :: P.Parser JSPChildSegment
 pJSPChildMemberNameSH = do
   P.char '.'
-  P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
-  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "-" <|> pUnicodeChar)
+  P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
+  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
   return (JSPChildMemberNameSH val)
 
 pJSPChildWildSeg :: P.Parser JSPChildSegment
@@ -129,8 +129,8 @@ pJSPDescBracketed =  do
 pJSPDescMemberNameSH :: P.Parser JSPDescSegment
 pJSPDescMemberNameSH = do
   P.string ".."
-  P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
-  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "-" <|> pUnicodeChar)
+  P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
+  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
   return (JSPDescMemberNameSH val)
 
 pJSPDescWildSeg :: P.Parser JSPDescSegment
@@ -248,8 +248,8 @@ pJSPSingleQNameSeg = P.try pSingleQNameBracketed <|> P.try pSingleQNameDotted
 
     pSingleQNameDotted = do
       P.char '.'
-      P.lookAhead (P.letter <|> P.oneOf "-" <|> pUnicodeChar)
-      name <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "-" <|> pUnicodeChar)
+      P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
+      name <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
       return $ JSPSingleQNameSeg name
 
 pJSPSingleQIndexSeg :: P.Parser JSPSingleQSegment
