@@ -71,9 +71,6 @@ spec = do
     it "parses query: $..[*]" $
       P.parse pJSPQuery "" "$..[*]" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescBracketed [JSPWildSel JSPWildcard])])
 
-    it "parses query $.hyphen-key" $
-      P.parse pJSPQuery "" "$.hyphen-key" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "hyphen-key")])
-
     it "fails with $.1startsWithNum" $
       P.parse pJSPQuery "" "$.1startsWithNum" `shouldSatisfy` isLeft
 
@@ -82,6 +79,12 @@ spec = do
 
     it "parses query with spaces around" $
       P.parse pJSPQuery "" "  $.key  " `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "key")])
+
+    it "parses query: $._" $
+      P.parse pJSPQuery "" "$._" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "_")])
+
+    it "parses query: $.underscore_key" $
+      P.parse pJSPQuery "" "$.underscore_key" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "underscore_key")])
 
     describe "parses JSPFilter Query" $ do
       it "$..books[?@.category == 'reference'].*" $
