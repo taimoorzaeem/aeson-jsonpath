@@ -3,6 +3,7 @@ module Data.Aeson.JSONPath.Parser
   ( pJSPQuery )
   where
 
+import qualified Data.Scientific                as Sci
 import qualified Data.Text                      as T
 import qualified Text.ParserCombinators.Parsec  as P
 
@@ -216,7 +217,7 @@ pJSPCompLitString :: P.Parser JSPComparable
 pJSPCompLitString = JSPCompLitString . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
 
 pJSPCompLitNum :: P.Parser JSPComparable
-pJSPCompLitNum = JSPCompLitNum <$> pScientific
+pJSPCompLitNum = JSPCompLitNum <$> (P.try pDoubleScientific <|> P.try pScientific)
 
 pJSPCompSQ :: P.Parser JSPComparable
 pJSPCompSQ = JSPCompSQ <$> (P.try pJSPRelSingleQ <|> P.try pJSPAbsSingleQ)
@@ -281,6 +282,14 @@ pScientific = do
   integer <- pSignedInteger
   int <- P.optionMaybe (P.char 'e' *> pSignedInt)
   return $ scientific integer (fromMaybe 0 int)
+
+pDoubleScientific :: P.Parser Scientific
+pDoubleScientific = do
+  whole <- P.many1 P.digit
+  P.char '.'
+  frac <- P.many1 P.digit
+  let num = read (whole ++ "." ++ frac) :: Double
+  return $ Sci.fromFloatDigits num
 
 pUnicodeChar :: P.Parser Char
 pUnicodeChar = P.satisfy inRange
