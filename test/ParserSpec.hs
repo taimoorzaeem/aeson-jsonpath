@@ -104,3 +104,6 @@ spec = do
 
       it "scientific: $.store.books[?@.price < -1e20]" $
         P.parse pJSPQuery "" "$.store.books[?@['price'] < -1e20]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum (-1.0e20)))]])])])
+
+      it "double: $.store.books[?@.price < 0.01]" $
+        P.parse pJSPQuery "" "$.store.books[?@['price'] < 0.01]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 0.01))]])])])
