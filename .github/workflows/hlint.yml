@@ -1,0 +1,18 @@
+name: Hlint
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  hlint:
+    name: Hlint - Linux
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Run hlint
+      run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s -- src/
