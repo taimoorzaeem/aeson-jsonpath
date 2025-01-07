@@ -31,15 +31,18 @@ jobs:
           cabal-${{ matrix.ghc }}-
 
     - name: Update Cabal package list
-      run: cabal v2-update
+      run: cabal v2-update --with-compiler=ghc-${{ matrix.ghc }}
  
     - name: Build project
-      run: cabal v2-build
+      run: cabal v2-build --with-compiler=ghc-${{ matrix.ghc }}
+
+    - name: Run tests
+      run: cabal v2-test --with-compiler=ghc-${{ matrix.ghc }}
 
   stack:
     strategy:
       matrix:
-        resolver: ['lts-23.2', 'nightly']
+        resolver: ['lts-23.3', 'nightly']
       fail-fast: false
     name: Stack - Linux Resolver ${{ matrix.resolver }}
     runs-on: ubuntu-24.04
