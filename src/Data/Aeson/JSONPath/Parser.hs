@@ -203,8 +203,8 @@ pJSPComparisonExpr = do
 pJSPComparisonOp :: P.Parser JSPComparisonOp
 pJSPComparisonOp = P.try (P.string ">=" $> JSPGreaterOrEqual)
                 <|> P.try (P.string "<=" $> JSPLessOrEqual)
-                <|> P.try (P.char '>' $> JSPLess)
-                <|> P.try (P.char '<' $> JSPGreater)
+                <|> P.try (P.char '>' $> JSPGreater)
+                <|> P.try (P.char '<' $> JSPLess)
                 <|> P.try (P.string "!=" $> JSPNotEqual)
                 <|> P.try (P.string "==" $> JSPEqual)
 

@@ -14,7 +14,18 @@ import Data.Aeson.JSONPath.Types    (JSPQuery (..)
                                     , JSPChildSegment (..)
                                     , JSPDescSegment (..)
                                     , JSPSelector (..)
-                                    , JSPWildcardT (..))
+                                    , JSPWildcardT (..)
+                                    , JSPLogicalExpr (..)
+                                    , JSPLogicalAndExpr (..)
+                                    , JSPBasicExpr (..)
+                                    , JSPParenExpr (..)
+                                    , JSPTestExpr (..)
+                                    , JSPComparisonExpr (..)
+                                    , JSPFilterQuery (..)
+                                    , JSPComparable (..)
+                                    , JSPComparisonOp (..)
+                                    , JSPSingularQuery (..)
+                                    , JSPSingleQSegment (..))
 import Data.Aeson.JSONPath.Parser   (pJSPQuery)
 import Data.Maybe                   (fromMaybe)
 import Data.Text                    (Text)
@@ -91,7 +102,7 @@ traverseJSPSelector (JSPSliceSel sliceVals) (JSON.Array arr) = traverseJSPSliceS
 traverseJSPSelector (JSPSliceSel _) _ = V.empty
 traverseJSPSelector (JSPWildSel JSPWildcard) (JSON.Array arr) = arr -- if array return the vector
 traverseJSPSelector (JSPWildSel JSPWildcard) doc = V.singleton doc
-traverseJSPSelector (JSPFilterSel _) doc = V.singleton doc -- implement later
+traverseJSPSelector (JSPFilterSel expr) doc = traverseJSPFilterSelector expr doc
 
 
 traverseJSPSliceSelector :: (Maybe Int, Maybe Int, Int) -> JSON.Array -> Vector JSON.Value
@@ -124,6 +135,61 @@ traverseJSPSliceSelector (start, end, step) doc = getSlice start end step doc
           V.ifilter (\i _ -> i `mod` (-n) == 0) $ V.reverse $ V.drop (V.length slice `mod` (-n)) slice
         else
           V.ifilter (\i _ -> i `mod` n == 0) slice
+
+traverseJSPFilterSelector :: JSPLogicalExpr -> JSON.Value -> Vector JSON.Value
+traverseJSPFilterSelector expr (JSON.Object obj) = traverseJSPLogicalExpr expr (V.fromList $ KM.elems obj)
+traverseJSPFilterSelector expr (JSON.Array arr) = traverseJSPLogicalExpr expr arr
+traverseJSPFilterSelector _ _ = V.empty
+
+traverseJSPLogicalExpr :: JSPLogicalExpr -> Vector JSON.Value -> Vector JSON.Value
+traverseJSPLogicalExpr expr = V.filter (`evaluateLogicalExpr` expr)
+
+evaluateLogicalExpr :: JSON.Value -> JSPLogicalExpr -> Bool
+evaluateLogicalExpr cur (JSPLogicalOr exprs) = any (evaluateLogicalAndExpr cur) exprs
+
+evaluateLogicalAndExpr :: JSON.Value -> JSPLogicalAndExpr -> Bool
+evaluateLogicalAndExpr cur (JSPLogicalAnd exprs) = all (evaluateBasicExpr cur) exprs
+
+evaluateBasicExpr :: JSON.Value -> JSPBasicExpr -> Bool
+evaluateBasicExpr cur (JSPParen jspParenExpr) = evaluateParenExpr cur jspParenExpr
+evaluateBasicExpr cur (JSPTest jspTestExpr) = evaluateTestExpr cur jspTestExpr
+evaluateBasicExpr cur (JSPComparison jspCompExpr) = evaluateCompExpr cur jspCompExpr
+
+evaluateParenExpr :: JSON.Value -> JSPParenExpr -> Bool
+evaluateParenExpr cur (JSPParenTrue expr) = evaluateLogicalExpr cur expr
+evaluateParenExpr cur (JSPParenFalse expr) = not $ evaluateLogicalExpr cur expr
+
+evaluateTestExpr :: JSON.Value -> JSPTestExpr -> Bool
+evaluateTestExpr cur (JSPTestTrue (JSPFilterRelQ segs)) = not $ V.null $ traverseJSPSegments segs cur
+evaluateTestExpr cur (JSPTestFalse (JSPFilterRelQ segs)) = V.null $ traverseJSPSegments segs cur
+-- TODO: wrong impl, cur should be root
+evaluateTestExpr cur (JSPTestTrue (JSPFilterRootQ segs)) = not $ V.null $ traverseJSPSegments segs cur
+evaluateTestExpr cur (JSPTestFalse (JSPFilterRootQ segs)) = V.null $ traverseJSPSegments segs cur
+
+evaluateCompExpr :: JSON.Value -> JSPComparisonExpr -> Bool
+evaluateCompExpr cur (JSPComp leftC op rightC) = compareVals op (getComparableVal cur leftC) (getComparableVal cur rightC)
+
+compareVals :: (Ord a) => JSPComparisonOp -> a -> a -> Bool
+compareVals JSPLess           = (<)
+compareVals JSPLessOrEqual    = (<=)
+compareVals JSPGreater        = (>)
+compareVals JSPGreaterOrEqual = (>=)
+compareVals JSPEqual          = (==)
+compareVals JSPNotEqual       = (/=)
+
+getComparableVal :: JSON.Value -> JSPComparable -> JSON.Value
+getComparableVal cur (JSPCompSQ (JSPRelSingleQ singularQSegs)) = traverseSingularQSegs cur singularQSegs
+getComparableVal cur (JSPCompSQ (JSPAbsSingleQ singularQSegs)) = traverseSingularQSegs cur singularQSegs -- TODO: wrong impl, cur should be root
+getComparableVal _ (JSPCompLitNum num) = JSON.Number num
+getComparableVal _ (JSPCompLitString txt) = JSON.String txt
+
+traverseSingularQSegs :: JSON.Value -> [JSPSingleQSegment] -> JSON.Value
+traverseSingularQSegs = foldl lookupSingleQSeg
+
+lookupSingleQSeg :: JSON.Value -> JSPSingleQSegment -> JSON.Value
+lookupSingleQSeg (JSON.Object obj) (JSPSingleQNameSeg txt) = fromMaybe JSON.Null $ KM.lookup (K.fromText txt) obj
+lookupSingleQSeg (JSON.Array arr) (JSPSingleQIndexSeg idx) = fromMaybe JSON.Null $ (V.!?) arr idx
+lookupSingleQSeg _ _ = JSON.Null
 
 emptyJSArray :: JSON.Value
 emptyJSArray = JSON.Array V.empty

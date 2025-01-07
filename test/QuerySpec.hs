@@ -180,6 +180,27 @@ books1To3And0And1Doc = [aesonQQ|[
       }
   ]|]
 
+lessThanPrice20Books :: JSON.Value
+lessThanPrice20Books = [aesonQQ| [
+      {
+        "title": "David Copperfield",
+        "author": "Charles Dickens",
+        "category": "fiction",
+        "price": 12.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      },
+      {
+        "title": "Crime and Punishment",
+        "author": "Fyodor Dostoevsky",
+        "category": "fiction",
+        "price": 19.99
+      }
+  ]|]
 
 alphaArr :: JSON.Value
 alphaArr = [aesonQQ| ["a","b","c","d","e","f","g"] |]
@@ -270,3 +291,23 @@ spec = do
 
     it "returns descendants with query $..[*]" $
       query [jsonPath|$..[*]|] rfcExample1 `shouldBe` getVector rfcExample1Desc
+
+    it "returns with filtering: number comparison" $
+      query [jsonPath| $.store.books[?@.price < 20] |] rootDoc
+      `shouldBe` getVector lessThanPrice20Books
+
+    it "returns with filtering: not operator" $
+      query [jsonPath| $.store.books[?!(@.price < 20)] |] rootDoc
+      `shouldBe` getVector books0Doc
+
+    it "returns with filtering: string comparison" $
+      query [jsonPath| $.store.books[?@.author == 'Jared Diamond'] |] rootDoc
+      `shouldBe` getVector books0Doc
+
+    it "returns with filtering: test expression" $
+      query [jsonPath| $.store.books[?@.author] |] rootDoc
+      `shouldBe` getVector booksDoc
+
+    it "returns with filtering: test expr gives empty with non-existent key" $
+      query [jsonPath| $.store.books[?@.not_here] |] rootDoc
+      `shouldBe` V.empty
