@@ -3,6 +3,7 @@
 - Allow spaces around the JSONPath query
 - Always return `Vector Value` and rename `runJSPQuery` to `query`
 - Replace hyphen with underscore in `member-name-shorthand`
+- Implement Filter Selector
 
 ## 0.2.0.0
 
