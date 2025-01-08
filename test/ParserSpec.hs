@@ -86,6 +86,9 @@ spec = do
     it "parses query: $.underscore_key" $
       P.parse pJSPQuery "" "$.underscore_key" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "underscore_key")])
 
+    it "parses query: $[0,TAB/LINEFEED/RETURN/SPACE1]" $
+      P.parse pJSPQuery "" "$[0,\n\t\r 1]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildBracketed [JSPIndexSel 0, JSPIndexSel 1])])
+
     describe "parses JSPFilter Query" $ do
       it "$..books[?@.category == 'reference'].*" $
         P.parse pJSPQuery "" "$..books[?@.category == 'reference'].*" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "category"])) JSPEqual (JSPCompLitString "reference"))]])]),JSPChildSeg (JSPChildWildSeg JSPWildcard)])

@@ -34,10 +34,10 @@ import Prelude
 
 pJSPQuery :: P.Parser JSPQuery
 pJSPQuery = do
-  P.spaces
+  pSpaces
   P.char '$'
   segs <- P.many pJSPSegment
-  P.spaces
+  pSpaces
   P.eof
   return $ JSPRoot segs
 
@@ -74,7 +74,7 @@ pJSPWildSel = JSPWildSel <$> (P.char '*' $> JSPWildcard)
 pJSPFilterSel :: P.Parser JSPSelector
 pJSPFilterSel = do
   P.char '?'
-  P.spaces
+  pSpaces
   JSPFilterSel <$> pJSPLogicalExpr
 
 pJSPSegment :: P.Parser JSPSegment
@@ -95,7 +95,7 @@ pJSPChildBracketed =  do
   return $ JSPChildBracketed (sel:optionalSels)
     where
       pCommaSepSelectors :: P.Parser JSPSelector
-      pCommaSepSelectors = P.char ',' *> P.spaces *> pJSPSelector
+      pCommaSepSelectors = P.char ',' *> pSpaces *> pJSPSelector
 
 pJSPChildMemberNameSH :: P.Parser JSPChildSegment
 pJSPChildMemberNameSH = do
@@ -124,7 +124,7 @@ pJSPDescBracketed =  do
   return $ JSPDescBracketed (sel:optionalSels)
     where
       pCommaSepSelectors :: P.Parser JSPSelector
-      pCommaSepSelectors = P.char ',' *> P.spaces *> pJSPSelector
+      pCommaSepSelectors = P.char ',' *> pSpaces *> pJSPSelector
 
 pJSPDescMemberNameSH :: P.Parser JSPDescSegment
 pJSPDescMemberNameSH = do
@@ -143,7 +143,7 @@ pJSPLogicalExpr = do
   return $ JSPLogicalOr (expr:optionalExprs)
     where
       pOrSepLogicalAndExprs :: P.Parser JSPLogicalAndExpr
-      pOrSepLogicalAndExprs = P.try $ P.spaces *> P.string "||" *> P.spaces *> pJSPLogicalAndExpr
+      pOrSepLogicalAndExprs = P.try $ pSpaces *> P.string "||" *> pSpaces *> pJSPLogicalAndExpr
 
 pJSPLogicalAndExpr :: P.Parser JSPLogicalAndExpr
 pJSPLogicalAndExpr = do
@@ -152,7 +152,7 @@ pJSPLogicalAndExpr = do
   return $ JSPLogicalAnd (expr:optionalExprs)
     where
       pAndSepBasicExprs :: P.Parser JSPBasicExpr
-      pAndSepBasicExprs = P.try $ P.spaces *> P.string "&&" *> P.spaces *> pJSPBasicExpr
+      pAndSepBasicExprs = P.try $ pSpaces *> P.string "&&" *> pSpaces *> pJSPBasicExpr
 
 pJSPBasicExpr :: P.Parser JSPBasicExpr
 pJSPBasicExpr = P.try pJSPParenExpr
@@ -161,18 +161,18 @@ pJSPBasicExpr = P.try pJSPParenExpr
 
 pJSPParenExpr :: P.Parser JSPBasicExpr
 pJSPParenExpr = do
-  notOp <- P.optionMaybe (P.char '!' <* P.spaces)
+  notOp <- P.optionMaybe (P.char '!' <* pSpaces)
   P.char '('
-  P.spaces
+  pSpaces
   expr <- pJSPLogicalExpr
-  P.spaces
+  pSpaces
   P.char ')'
   let parenExp = if isJust notOp then JSPParenFalse expr else JSPParenTrue expr
   return $ JSPParen parenExp
 
 pJSPTestExpr :: P.Parser JSPBasicExpr
 pJSPTestExpr = do
-  notOp <- P.optionMaybe (P.char '!' <* P.spaces)
+  notOp <- P.optionMaybe (P.char '!' <* pSpaces)
   q <- pJSPFilterQuery
   let testExp = if isJust notOp then JSPTestFalse q else JSPTestTrue q
   return $ JSPTest testExp
@@ -195,9 +195,9 @@ pJSPRootQuery = do
 pJSPComparisonExpr :: P.Parser JSPBasicExpr
 pJSPComparisonExpr = do
   leftC <- pJSPComparable
-  P.spaces
+  pSpaces
   compOp <- pJSPComparisonOp
-  P.spaces
+  pSpaces
   JSPComparison . JSPComp leftC compOp <$> pJSPComparable
 
 pJSPComparisonOp :: P.Parser JSPComparisonOp
@@ -297,3 +297,7 @@ pUnicodeChar = P.satisfy inRange
     inRange c = let code = ord c in
       (code >= 0x80 && code <= 0xD7FF) ||
       (code >= 0xE000 && code <= 0x10FFFF)
+
+-- https://www.rfc-editor.org/rfc/rfc9535#name-syntax
+pSpaces :: P.Parser [Char]
+pSpaces = P.many (P.oneOf " \n\r\t")
