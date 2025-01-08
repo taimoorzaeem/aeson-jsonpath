@@ -44,4 +44,4 @@ runJSPQuery [jsonPath|$.store.books[1,2:5,7]|] jsonDoc
 
 ## Development
 
-Please report any bugs you encounter by opening an issue. Contributions are welcomed.
+Please report any bugs you encounter by opening an issue.
