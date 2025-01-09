@@ -251,7 +251,7 @@ spec = do
       query [jsonPath|$['store']|] rootDoc `shouldBe` V.singleton storeDoc
 
     it "returns books array when query is $.store.books" $
-      query [jsonPath|$.store.books|] rootDoc `shouldBe` getVector booksDoc
+      query [jsonPath|$.store.books|] rootDoc `shouldBe` V.singleton booksDoc
 
     it "returns 0-index book item when query is $.store.books[0]" $
       query [jsonPath|$.store.books[0]|] rootDoc `shouldBe` getVector books0Doc

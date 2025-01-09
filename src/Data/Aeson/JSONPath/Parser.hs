@@ -1,263 +1,240 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 module Data.Aeson.JSONPath.Parser
-  ( pJSPQuery )
+  ( pQuery )
   where
 
 import qualified Data.Scientific                as Sci
 import qualified Data.Text                      as T
 import qualified Text.ParserCombinators.Parsec  as P
 
-import Data.Aeson.JSONPath.Types     (JSPQuery (..)
-                                     , JSPSegment (..)
-                                     , JSPChildSegment (..)
-                                     , JSPDescSegment (..)
-                                     , JSPSelector (..)
-                                     , JSPWildcardT (..)
-                                     , JSPLogicalExpr (..)
-                                     , JSPLogicalAndExpr (..)
-                                     , JSPBasicExpr (..)
-                                     , JSPParenExpr (..)
-                                     , JSPTestExpr (..)
-                                     , JSPFilterQuery (..)
-                                     , JSPComparisonExpr (..)
-                                     , JSPComparable (..)
-                                     , JSPComparisonOp (..)
-                                     , JSPSingularQuery (..)
-                                     , JSPSingleQSegment (..))
+import Data.Aeson.JSONPath.Query.Types (Query (..)
+                                       , QueryType (..)
+                                       , QuerySegment (..)
+                                       , Segment (..)
+                                       , SegmentType (..)
+                                       , Selector (..)
+                                       , LogicalOrExpr (..)
+                                       , LogicalAndExpr (..)
+                                       , BasicExpr (..)
+                                       , ComparisonExpr (..)
+                                       , ComparisonOp (..)
+                                       , Comparable(..)
+                                       , SingularQuery (..)
+                                       , SingularQueryType (..)
+                                       , SingularQuerySegment (..))
 import Data.Functor                  (($>))
 import Data.Char                     (ord)
-import Data.Maybe                    (isJust, fromMaybe)
+import Data.Maybe                    (isNothing, fromMaybe)
 import Data.Scientific               (Scientific, scientific)
 import Text.ParserCombinators.Parsec ((<|>))
 
 import Prelude
 
-pJSPQuery :: P.Parser JSPQuery
-pJSPQuery = do
-  pSpaces
+pQuery :: P.Parser Query
+pQuery = pSpaces 
+       *> (P.try pRootQuery <|> P.try pCurrentQuery) 
+       <* pSpaces 
+       <* P.eof
+
+pRootQuery :: P.Parser Query
+pRootQuery = do
   P.char '$'
-  segs <- P.many pJSPSegment
-  pSpaces
-  P.eof
-  return $ JSPRoot segs
+  segs <- P.many pQuerySegment
+  return $ Query { queryType = Root, querySegments = segs }
 
-pJSPSelector :: P.Parser JSPSelector
-pJSPSelector = P.try pJSPNameSel 
-            <|> P.try pJSPIndexSel
-            <|> P.try pJSPSliceSel 
-            <|> P.try pJSPWildSel
-            <|> P.try pJSPFilterSel
+pCurrentQuery :: P.Parser Query
+pCurrentQuery = do
+  P.char '@'
+  segs <- P.many pQuerySegment
+  return $ Query { queryType = Current, querySegments = segs }
 
-pJSPNameSel :: P.Parser JSPSelector
-pJSPNameSel = JSPNameSel . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
 
-pJSPIndexSel :: P.Parser JSPSelector
-pJSPIndexSel = do
-  num <- pSignedInt
+pQuerySegment :: P.Parser QuerySegment
+pQuerySegment = do
+  dotdot <- P.optionMaybe (P.try $ P.string "..")
+  seg <- pSegment $ isNothing dotdot
+  let segType = if isNothing dotdot then Child else Descendant
+  return $ QuerySegment { segmentType = segType, segment = seg }
+
+pSegment :: Bool -> P.Parser Segment
+pSegment isChild = P.try pBracketed
+                <|> P.try (pDotted isChild)
+                <|> P.try (pWildcardSeg isChild)
+
+
+pBracketed :: P.Parser Segment
+pBracketed = do
+  P.char '['
+  sel <- pSelector
+  optionalSels <- P.many pCommaSepSelectors
+  P.char ']'
+  return $ Bracketed (sel:optionalSels)
+    where
+      pCommaSepSelectors :: P.Parser Selector
+      pCommaSepSelectors = P.try $ P.char ',' *> pSpaces *> pSelector
+
+
+pDotted :: Bool -> P.Parser Segment
+pDotted isChild = do
+  (if isChild then P.string "." else P.string "")
+  P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
+  key <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
+  return $ Dotted key
+
+
+pWildcardSeg :: Bool -> P.Parser Segment
+pWildcardSeg isChild = (if isChild then P.string "." else P.string "") *> P.char '*' $> WildcardSegment
+  
+pSelector :: P.Parser Selector
+pSelector = P.try pName
+         <|> P.try pIndex
+         <|> P.try pSlice 
+         <|> P.try pWildcardSel
+         <|> P.try pFilter
+
+pName :: P.Parser Selector
+pName = Name . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
+  where
+    pSingleQuotted = P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\''
+    pDoubleQuotted = P.char '\"' *> P.many (P.noneOf "\"") <* P.char '\"' 
+
+pIndex :: P.Parser Selector
+pIndex = do
+  idx <- pSignedInt
   P.notFollowedBy $ P.char ':'
-  return $ JSPIndexSel num
+  return $ Index idx
 
-pJSPSliceSel :: P.Parser JSPSelector
-pJSPSliceSel = do
+pSlice :: P.Parser Selector
+pSlice = do
   start <- P.optionMaybe pSignedInt
   P.char ':'
   end <- P.optionMaybe pSignedInt
   step <- P.optionMaybe (P.char ':' *> P.optionMaybe pSignedInt)
-  return $ JSPSliceSel (start, end, case step of
+  return $ ArraySlice (start, end, case step of
     Just (Just n) -> n
     _ -> 1)
 
 
-pJSPWildSel :: P.Parser JSPSelector
-pJSPWildSel = JSPWildSel <$> (P.char '*' $> JSPWildcard)
+pWildcardSel :: P.Parser Selector
+pWildcardSel = P.char '*' $> WildcardSelector
 
-pJSPFilterSel :: P.Parser JSPSelector
-pJSPFilterSel = do
+
+pFilter :: P.Parser Selector
+pFilter = do
   P.char '?'
   pSpaces
-  JSPFilterSel <$> pJSPLogicalExpr
-
-pJSPSegment :: P.Parser JSPSegment
-pJSPSegment = pJSPChildSegment <|> pJSPDescSegment
-
-pJSPChildSegment :: P.Parser JSPSegment
-pJSPChildSegment = 
-  JSPChildSeg <$> (P.try pJSPChildBracketed 
-                  <|> P.try pJSPChildMemberNameSH 
-                  <|> P.try pJSPChildWildSeg)
-
-pJSPChildBracketed :: P.Parser JSPChildSegment
-pJSPChildBracketed =  do
-  P.char '['
-  sel <- pJSPSelector
-  optionalSels <- P.many pCommaSepSelectors
-  P.char ']'
-  return $ JSPChildBracketed (sel:optionalSels)
-    where
-      pCommaSepSelectors :: P.Parser JSPSelector
-      pCommaSepSelectors = P.char ',' *> pSpaces *> pJSPSelector
-
-pJSPChildMemberNameSH :: P.Parser JSPChildSegment
-pJSPChildMemberNameSH = do
-  P.char '.'
-  P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
-  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
-  return (JSPChildMemberNameSH val)
-
-pJSPChildWildSeg :: P.Parser JSPChildSegment
-pJSPChildWildSeg = JSPChildWildSeg <$> (P.string ".*" $> JSPWildcard)
+  Filter <$> pLogicalOrExpr
 
 
-pJSPDescSegment :: P.Parser JSPSegment
-pJSPDescSegment = 
-  JSPDescSeg <$> (P.try pJSPDescBracketed 
-                  <|> P.try pJSPDescMemberNameSH 
-                  <|> P.try pJSPDescWildSeg)
-
-pJSPDescBracketed :: P.Parser JSPDescSegment
-pJSPDescBracketed =  do
-  P.string ".."
-  P.char '['
-  sel <- pJSPSelector
-  optionalSels <- P.many pCommaSepSelectors
-  P.char ']'
-  return $ JSPDescBracketed (sel:optionalSels)
-    where
-      pCommaSepSelectors :: P.Parser JSPSelector
-      pCommaSepSelectors = P.char ',' *> pSpaces *> pJSPSelector
-
-pJSPDescMemberNameSH :: P.Parser JSPDescSegment
-pJSPDescMemberNameSH = do
-  P.string ".."
-  P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
-  val <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
-  return (JSPDescMemberNameSH val)
-
-pJSPDescWildSeg :: P.Parser JSPDescSegment
-pJSPDescWildSeg = JSPDescWildSeg <$> (P.string "..*" $> JSPWildcard)
-
-pJSPLogicalExpr :: P.Parser JSPLogicalExpr
-pJSPLogicalExpr = do
-  expr <- pJSPLogicalAndExpr
+pLogicalOrExpr :: P.Parser LogicalOrExpr
+pLogicalOrExpr = do
+  expr <- pLogicalAndExpr
   optionalExprs <- P.many pOrSepLogicalAndExprs
-  return $ JSPLogicalOr (expr:optionalExprs)
+  return $ LogicalOr (expr:optionalExprs)
     where
-      pOrSepLogicalAndExprs :: P.Parser JSPLogicalAndExpr
-      pOrSepLogicalAndExprs = P.try $ pSpaces *> P.string "||" *> pSpaces *> pJSPLogicalAndExpr
+      pOrSepLogicalAndExprs :: P.Parser LogicalAndExpr
+      pOrSepLogicalAndExprs = P.try $ pSpaces *> P.string "||" *> pSpaces *> pLogicalAndExpr
 
-pJSPLogicalAndExpr :: P.Parser JSPLogicalAndExpr
-pJSPLogicalAndExpr = do
-  expr <- pJSPBasicExpr
+pLogicalAndExpr :: P.Parser LogicalAndExpr
+pLogicalAndExpr = do
+  expr <- pBasicExpr
   optionalExprs <- P.many pAndSepBasicExprs
-  return $ JSPLogicalAnd (expr:optionalExprs)
+  return $ LogicalAnd (expr:optionalExprs)
     where
-      pAndSepBasicExprs :: P.Parser JSPBasicExpr
-      pAndSepBasicExprs = P.try $ pSpaces *> P.string "&&" *> pSpaces *> pJSPBasicExpr
+      pAndSepBasicExprs :: P.Parser BasicExpr
+      pAndSepBasicExprs = P.try $ pSpaces *> P.string "&&" *> pSpaces *> pBasicExpr
 
-pJSPBasicExpr :: P.Parser JSPBasicExpr
-pJSPBasicExpr = P.try pJSPParenExpr
-             <|> P.try pJSPComparisonExpr
-             <|> P.try pJSPTestExpr
+pBasicExpr :: P.Parser BasicExpr
+pBasicExpr = P.try pParenExpr
+          <|> P.try pComparisonExpr
+          <|> P.try pTestExpr
 
-pJSPParenExpr :: P.Parser JSPBasicExpr
-pJSPParenExpr = do
+pParenExpr :: P.Parser BasicExpr
+pParenExpr = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
   P.char '('
   pSpaces
-  expr <- pJSPLogicalExpr
+  expr <- pLogicalOrExpr
   pSpaces
   P.char ')'
-  let parenExp = if isJust notOp then JSPParenFalse expr else JSPParenTrue expr
-  return $ JSPParen parenExp
+  let parenExp = if isNothing notOp then Paren expr else NotParen expr
+  return parenExp
 
-pJSPTestExpr :: P.Parser JSPBasicExpr
-pJSPTestExpr = do
+pTestExpr :: P.Parser BasicExpr
+pTestExpr = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
-  q <- pJSPFilterQuery
-  let testExp = if isJust notOp then JSPTestFalse q else JSPTestTrue q
-  return $ JSPTest testExp
+  q <- P.try pRootQuery <|> P.try pCurrentQuery
+  let testExp = if isNothing notOp then Test q else NotTest q
+  return testExp
 
-pJSPFilterQuery :: P.Parser JSPFilterQuery
-pJSPFilterQuery = P.try pJSPRelQuery <|> P.try pJSPRootQuery
-
-pJSPRelQuery :: P.Parser JSPFilterQuery
-pJSPRelQuery = do
-  P.char '@'
-  segs <- P.many pJSPSegment
-  return $ JSPFilterRelQ segs
-
-pJSPRootQuery :: P.Parser JSPFilterQuery
-pJSPRootQuery = do
-  P.char '$'
-  segs <- P.many pJSPSegment
-  return $ JSPFilterRootQ segs
-
-pJSPComparisonExpr :: P.Parser JSPBasicExpr
-pJSPComparisonExpr = do
-  leftC <- pJSPComparable
+pComparisonExpr :: P.Parser BasicExpr
+pComparisonExpr = do
+  leftC <- pComparable
   pSpaces
-  compOp <- pJSPComparisonOp
+  compOp <- pComparisonOp
   pSpaces
-  JSPComparison . JSPComp leftC compOp <$> pJSPComparable
+  Comparison . Comp leftC compOp <$> pComparable
 
-pJSPComparisonOp :: P.Parser JSPComparisonOp
-pJSPComparisonOp = P.try (P.string ">=" $> JSPGreaterOrEqual)
-                <|> P.try (P.string "<=" $> JSPLessOrEqual)
-                <|> P.try (P.char '>' $> JSPGreater)
-                <|> P.try (P.char '<' $> JSPLess)
-                <|> P.try (P.string "!=" $> JSPNotEqual)
-                <|> P.try (P.string "==" $> JSPEqual)
+pComparisonOp :: P.Parser ComparisonOp
+pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
+                <|> P.try (P.string "<=" $> LessOrEqual)
+                <|> P.try (P.char '>' $> Greater)
+                <|> P.try (P.char '<' $> Less)
+                <|> P.try (P.string "!=" $> NotEqual)
+                <|> P.try (P.string "==" $> Equal)
 
-pJSPComparable :: P.Parser JSPComparable
-pJSPComparable = P.try pJSPCompLitString
-              <|> P.try pJSPCompLitNum
-              <|> P.try pJSPCompSQ
+pComparable :: P.Parser Comparable
+pComparable = P.try pCompLitString
+              <|> P.try pCompLitNum
+              <|> P.try pCompSQ
 
-pJSPCompLitString :: P.Parser JSPComparable
-pJSPCompLitString = JSPCompLitString . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
+pCompLitString :: P.Parser Comparable
+pCompLitString = CompLitString . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
 
-pJSPCompLitNum :: P.Parser JSPComparable
-pJSPCompLitNum = JSPCompLitNum <$> (P.try pDoubleScientific <|> P.try pScientific)
+pCompLitNum :: P.Parser Comparable
+pCompLitNum = CompLitNum <$> (P.try pDoubleScientific <|> P.try pScientific)
 
-pJSPCompSQ :: P.Parser JSPComparable
-pJSPCompSQ = JSPCompSQ <$> (P.try pJSPRelSingleQ <|> P.try pJSPAbsSingleQ)
+pCompSQ :: P.Parser Comparable
+pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ)
 
-pJSPRelSingleQ :: P.Parser JSPSingularQuery
-pJSPRelSingleQ = do
+pCurrentSingleQ :: P.Parser SingularQuery
+pCurrentSingleQ = do
   P.char '@'
-  segs <- P.many pJSPSingleQSegment
-  return $ JSPRelSingleQ segs
+  segs <- P.many pSingularQuerySegment
+  return $ SingularQuery { singularQueryType = CurrentSQ, singularQuerySegments = segs }
 
-pJSPAbsSingleQ :: P.Parser JSPSingularQuery
-pJSPAbsSingleQ = do
+pRootSingleQ :: P.Parser SingularQuery
+pRootSingleQ = do
   P.char '$'
-  segs <- P.many pJSPSingleQSegment
-  return $ JSPAbsSingleQ segs
+  segs <- P.many pSingularQuerySegment
+  return $ SingularQuery { singularQueryType = RootSQ, singularQuerySegments = segs }
 
-pJSPSingleQSegment :: P.Parser JSPSingleQSegment
-pJSPSingleQSegment = P.try pJSPSingleQNameSeg <|> P.try pJSPSingleQIndexSeg
+pSingularQuerySegment :: P.Parser SingularQuerySegment
+pSingularQuerySegment = P.try pSingularQNameSeg <|> P.try pSingularQIndexSeg
 
-pJSPSingleQNameSeg :: P.Parser JSPSingleQSegment
-pJSPSingleQNameSeg = P.try pSingleQNameBracketed <|> P.try pSingleQNameDotted
+pSingularQNameSeg :: P.Parser SingularQuerySegment
+pSingularQNameSeg = P.try pSingularQNameBracketed <|> P.try pSingularQNameDotted
   where
-    pSingleQNameBracketed = do
+    pSingularQNameBracketed = do
+      let pSingleQuotted = P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\''
+      let pDoubleQuotted = P.char '\"' *> P.many (P.noneOf "\"") <* P.char '\"'
       P.char '['
-      name <- T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'") <* P.char '\'')
+      name <- T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
       P.char ']'
-      return $ JSPSingleQNameSeg name
+      return $ NameSQSeg name
 
-    pSingleQNameDotted = do
+    pSingularQNameDotted = do
       P.char '.'
       P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
       name <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
-      return $ JSPSingleQNameSeg name
+      return $ NameSQSeg name
 
-pJSPSingleQIndexSeg :: P.Parser JSPSingleQSegment
-pJSPSingleQIndexSeg = do
+pSingularQIndexSeg :: P.Parser SingularQuerySegment
+pSingularQIndexSeg = do
   P.char '['
-  num <- pSignedInt
+  idx <- pSignedInt
   P.char ']'
-  return $ JSPSingleQIndexSeg num
+  return $ IndexSQSeg idx
 
 pSignedInt :: P.Parser Int
 pSignedInt = do
