@@ -5,24 +5,22 @@ module ParserSpec
 import qualified Text.ParserCombinators.Parsec as P
 import Test.Hspec
 
-import Data.Aeson.JSONPath.Parser (pJSPQuery)
-import Data.Aeson.JSONPath.Types  (JSPQuery (..)
-                                  , JSPSegment (..)
-                                  , JSPChildSegment (..)
-                                  , JSPDescSegment (..)
-                                  , JSPSelector (..)
-                                  , JSPWildcardT (..)
-                                  , JSPLogicalExpr (..)
-                                  , JSPLogicalAndExpr (..)
-                                  , JSPBasicExpr (..)
-                                  , JSPParenExpr (..)
-                                  , JSPTestExpr (..)
-                                  , JSPFilterQuery (..)
-                                  , JSPComparisonExpr (..)
-                                  , JSPComparable (..)
-                                  , JSPComparisonOp (..)
-                                  , JSPSingularQuery (..)
-                                  , JSPSingleQSegment (..))
+import Data.Aeson.JSONPath.Parser       (pQuery)
+import Data.Aeson.JSONPath.Query.Types  (Query (..)
+                                        , QueryType (..)
+                                        , Segment (..)
+                                        , QuerySegment (..)
+                                        , SegmentType (..)
+                                        , Selector (..)
+                                        , LogicalOrExpr (..)
+                                        , LogicalAndExpr (..)
+                                        , BasicExpr (..)
+                                        , ComparisonExpr (..)
+                                        , ComparisonOp (..)
+                                        , Comparable(..)
+                                        , SingularQuery (..)
+                                        , SingularQueryType (..)
+                                        , SingularQuerySegment (..))
 import Data.Either                (isLeft)
 import Prelude
 
@@ -30,86 +28,399 @@ spec :: Spec
 spec = do
   describe "Parse JSPQuery" $ do
     it "parses query: $" $
-      P.parse pJSPQuery "" "$" `shouldBe` Right (JSPRoot [])
+      P.parse pQuery "" "$"
+      `shouldBe`
+      Right (Query{queryType=Root,querySegments=[]})
 
     it "parses query: $.store" $
-      P.parse pJSPQuery "" "$.store" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store")])
+      P.parse pQuery "" "$.store"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }]
+      }
 
     it "parses query: $['store']" $
-      P.parse pJSPQuery "" "$['store']" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildBracketed [JSPNameSel "store"])])
+      P.parse pQuery "" "$['store']"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [Name "store"]
+        }]
+      }
 
     it "parses query: $.store.books" $
-      P.parse pJSPQuery "" "$.store.books" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books")])
+      P.parse pQuery "" "$.store.books"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+          }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }]
+      }
 
     it "parses query: $.store.books[0]" $
-      P.parse pJSPQuery "" "$.store.books[0]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPIndexSel 0])])
+      P.parse pQuery "" "$.store.books[0]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [Index 0]
+        }]
+      }
 
     it "parses query: $.store.books[0,2]" $
-      P.parse pJSPQuery "" "$.store.books[0,2]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPIndexSel 0, JSPIndexSel 2])])
+      P.parse pQuery "" "$.store.books[0,2]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [Index 0, Index 2]
+        }]
+      }
 
     it "parses query: $.store.books[1:3]" $
-      P.parse pJSPQuery "" "$.store.books[1:3]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPSliceSel (Just 1, Just 3, 1)])])
+      P.parse pQuery "" "$.store.books[1:3]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [ArraySlice (Just 1, Just 3, 1)]
+        }]
+      }
 
     it "parses query: $.store.books[1:4:2]" $
-      P.parse pJSPQuery "" "$.store.books[1:4:2]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPSliceSel (Just 1, Just 4, 2)])])
+      P.parse pQuery "" "$.store.books[1:4:2]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [ArraySlice (Just 1, Just 4, 2)]
+        }]
+      }
 
     it "parses query: $.store.books[-1:-4:-2]" $
-      P.parse pJSPQuery "" "$.store.books[-1:-4:-2]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPSliceSel (Just (-1), Just (-4), -2)])])
+      P.parse pQuery "" "$.store.books[-1:-4:-2]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [ArraySlice (Just (-1), Just (-4), (-2))]
+        }]
+      }
 
     it "parses query: $.store.books[1:3, 0, 1]" $
-      P.parse pJSPQuery "" "$.store.books[1:3, 0, 1]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPSliceSel (Just 1, Just 3, 1), JSPIndexSel 0, JSPIndexSel 1])])
+      P.parse pQuery "" "$.store.books[1:3, 0, 1]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "store"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Dotted "books"
+        }, QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [ArraySlice (Just 1, Just 3, 1), Index 0, Index 1]
+        }]
+      }
 
     it "parses query: $.*" $
-      P.parse pJSPQuery "" "$.*" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildWildSeg JSPWildcard)])
+      P.parse pQuery "" "$.*" 
+      `shouldBe` 
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = WildcardSegment
+        }]
+      }
 
     it "parses query: $[*]" $
-      P.parse pJSPQuery "" "$[*]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildBracketed [JSPWildSel JSPWildcard])])
+      P.parse pQuery "" "$[*]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [WildcardSelector]
+        }]
+      }
 
     it "parses query: $..*" $
-      P.parse pJSPQuery "" "$..*" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescWildSeg JSPWildcard)])
+      P.parse pQuery "" "$..*"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Descendant,
+          segment = WildcardSegment
+        }]
+      }
 
     it "parses query: $..[*]" $
-      P.parse pJSPQuery "" "$..[*]" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescBracketed [JSPWildSel JSPWildcard])])
+      P.parse pQuery "" "$..[*]"
+      `shouldBe` 
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Descendant,
+          segment = Bracketed [WildcardSelector]
+        }]
+      }
 
     it "fails with $.1startsWithNum" $
-      P.parse pJSPQuery "" "$.1startsWithNum" `shouldSatisfy` isLeft
+      P.parse pQuery "" "$.1startsWithNum"
+      `shouldSatisfy` isLeft
 
     it "parses query $.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ" $
-      P.parse pJSPQuery "" "$.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ")])
+      P.parse pQuery "" "$.©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "©®±×÷Ωπ•€→∀∃∈≠≤≥✓λ"
+        }]
+      }
 
     it "parses query with spaces around" $
-      P.parse pJSPQuery "" "  $.key  " `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "key")])
+      P.parse pQuery "" "  $.key  "
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "key"
+        }]
+      }
 
     it "parses query: $._" $
-      P.parse pJSPQuery "" "$._" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "_")])
+      P.parse pQuery "" "$._"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "_"
+        }]
+      }
 
     it "parses query: $.underscore_key" $
-      P.parse pJSPQuery "" "$.underscore_key" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "underscore_key")])
+      P.parse pQuery "" "$.underscore_key"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Dotted "underscore_key"
+        }]
+      }
 
     it "parses query: $[0,TAB/LINEFEED/RETURN/SPACE1]" $
-      P.parse pJSPQuery "" "$[0,\n\t\r 1]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildBracketed [JSPIndexSel 0, JSPIndexSel 1])])
+      P.parse pQuery "" "$[0,\n\t\r 1]"
+      `shouldBe`
+      Right Query {
+        queryType = Root,
+        querySegments = [QuerySegment {
+          segmentType = Child,
+          segment = Bracketed [Index 0, Index 1]
+        }]
+      }
 
     describe "parses JSPFilter Query" $ do
-      it "$..books[?@.category == 'reference'].*" $
-        P.parse pJSPQuery "" "$..books[?@.category == 'reference'].*" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "category"])) JSPEqual (JSPCompLitString "reference"))]])]),JSPChildSeg (JSPChildWildSeg JSPWildcard)])
+      it "$[?@.category == 'reference']" $
+        P.parse pQuery "" "$[?@.category == 'reference']"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "category"]
+            }) Equal (CompLitString "reference"))]])]
+          }]
+        }
 
       it "test expr: $..books[?@.price].title" $
-        P.parse pJSPQuery "" "$..books[?@.price].title" `shouldBe` Right (JSPRoot [JSPDescSeg (JSPDescMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPTest (JSPTestTrue (JSPFilterRelQ [JSPChildSeg (JSPChildMemberNameSH "price")]))]])]),JSPChildSeg (JSPChildMemberNameSH "title")])
+        P.parse pQuery "" "$..books[?@.price].title"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Descendant,
+            segment = Dotted "books"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Test Query {
+              queryType = Current,
+              querySegments = [QuerySegment {
+                segmentType = Child,
+                segment = Dotted "price"
+              }]
+            }]])]
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Dotted "title"
+          }]
+        }
 
-      it "and expr: $.store.books[?@.price < 20 && @.price > 10]" $
-        P.parse pJSPQuery "" "$.store.books[?@.price < 20 && @.price > 10]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"),JSPChildSeg (JSPChildMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 20.0)),JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 10.0))]])])])
+      it "and expr: $[?@.price < 20 && @.price > 10]" $
+        P.parse pQuery "" "$[?@.price < 20 && @.price > 10]" 
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Less (CompLitNum 20.0)), Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Greater (CompLitNum 10.0))]])]
+          }]
+        }
 
-      it "or expr: $.store.books[?@.price < 20 || @.price > 10]" $
-        P.parse pJSPQuery "" "$.store.books[?@.price < 20 || @.price > 10]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"),JSPChildSeg (JSPChildMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 20.0))],JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 10.0))]])])])
+      it "or expr: $[?@.price < 20 || @.price > 10]" $
+        P.parse pQuery "" "$[?@.price < 20 || @.price > 10]"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Less (CompLitNum 20.0))], LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Greater (CompLitNum 10.0))]])]
+          }]
+        }
 
-      it "root filter: $.store.books[?$.price].title" $
-        P.parse pJSPQuery "" "$.store.books[?$.price].title" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPTest (JSPTestTrue (JSPFilterRootQ [JSPChildSeg (JSPChildMemberNameSH "price")]))]])]), JSPChildSeg (JSPChildMemberNameSH "title")])
+      it "root filter: $..books[?$.price].title" $
+        P.parse pQuery "" "$..books[?$.price].title"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Descendant,
+            segment = Dotted "books"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Test Query {
+              queryType = Root,
+              querySegments = [QuerySegment {
+                segmentType = Child,
+                segment = Dotted "price"
+              }]
+            }]])]
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Dotted "title"
+          }]
+        }
 
-      it "not expr: $.store.books[?!(@.price < 20 && @.price > 10)]" $
-        P.parse pJSPQuery "" "$.store.books[?!(@.price < 20 && @.price > 10)]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"),JSPChildSeg (JSPChildMemberNameSH "books"),JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPParen (JSPParenFalse (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 20.0)),JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPGreater (JSPCompLitNum 10.0))]]))]])])])
+      it "not expr: $[?!(@.price < 20 && @.price > 10)]" $
+        P.parse pQuery "" "$[?!(@.price < 20 && @.price > 10)]" 
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [NotParen (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            })  Less (CompLitNum 20.0)), Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Greater (CompLitNum 10.0))]])]])]
+          }]
+        }
 
       it "scientific: $.store.books[?@.price < -1e20]" $
-        P.parse pJSPQuery "" "$.store.books[?@['price'] < -1e20]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum (-1.0e20)))]])])])
+        P.parse pQuery "" "$.store.books[?@['price'] < -1e20]"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Dotted "store"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Dotted "books"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Less (CompLitNum (-1.0e20)))]])]
+          }]
+        }
 
       it "double: $.store.books[?@.price < 0.01]" $
-        P.parse pJSPQuery "" "$.store.books[?@['price'] < 0.01]" `shouldBe` Right (JSPRoot [JSPChildSeg (JSPChildMemberNameSH "store"), JSPChildSeg (JSPChildMemberNameSH "books"), JSPChildSeg (JSPChildBracketed [JSPFilterSel (JSPLogicalOr [JSPLogicalAnd [JSPComparison (JSPComp (JSPCompSQ (JSPRelSingleQ [JSPSingleQNameSeg "price"])) JSPLess (JSPCompLitNum 0.01))]])])])
+        P.parse pQuery "" "$.store.books[?@['price'] < 0.01]"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Dotted "store"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Dotted "books"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "price"]
+            }) Less (CompLitNum (1.0e-2)))]])]
+          }]
+        }
