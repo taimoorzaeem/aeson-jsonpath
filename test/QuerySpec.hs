@@ -5,7 +5,7 @@ module QuerySpec
 import qualified Data.Aeson        as JSON
 import qualified Data.Vector       as V
 
-import Data.Aeson.JSONPath  (query, jsonPath)
+import Data.Aeson.JSONPath  (queryQQ, jsonPath)
 import Data.Aeson.QQ.Simple (aesonQQ)
 import Data.Vector          (Vector)
 import Test.Hspec
@@ -242,72 +242,72 @@ spec :: Spec
 spec = do
   describe "Run JSPQuery on JSON documents" $ do
     it "returns root document when query is $" $
-      query [jsonPath|$|] rootDoc `shouldBe` V.singleton rootDoc
+      queryQQ [jsonPath|$|] rootDoc `shouldBe` V.singleton rootDoc
 
-    it "returns store object when query is $.store" $
-      query [jsonPath|$.store|] rootDoc `shouldBe` V.singleton storeDoc
+    it "returns store object when queryQQ is $.store" $
+      queryQQ [jsonPath|$.store|] rootDoc `shouldBe` V.singleton storeDoc
 
-    it "returns store object when query is $['store']" $
-      query [jsonPath|$['store']|] rootDoc `shouldBe` V.singleton storeDoc
+    it "returns store object when queryQQ is $['store']" $
+      queryQQ [jsonPath|$['store']|] rootDoc `shouldBe` V.singleton storeDoc
 
-    it "returns books array when query is $.store.books" $
-      query [jsonPath|$.store.books|] rootDoc `shouldBe` V.singleton booksDoc
+    it "returns books array when queryQQ is $.store.books" $
+      queryQQ [jsonPath|$.store.books|] rootDoc `shouldBe` V.singleton booksDoc
 
-    it "returns 0-index book item when query is $.store.books[0]" $
-      query [jsonPath|$.store.books[0]|] rootDoc `shouldBe` getVector books0Doc
+    it "returns 0-index book item when queryQQ is $.store.books[0]" $
+      queryQQ [jsonPath|$.store.books[0]|] rootDoc `shouldBe` getVector books0Doc
 
-    it "returns 0-index book item when query is $.store.books[-4]" $
-      query [jsonPath|$.store.books[-4]|] rootDoc `shouldBe` getVector books0Doc
+    it "returns 0-index book item when queryQQ is $.store.books[-4]" $
+      queryQQ [jsonPath|$.store.books[-4]|] rootDoc `shouldBe` getVector books0Doc
 
-    it "returns 0,2-index item when query is $.store.books[0,2]" $
-      query [jsonPath|$.store.books[0,2]|] rootDoc `shouldBe` getVector books0And2Doc
+    it "returns 0,2-index item when queryQQ is $.store.books[0,2]" $
+      queryQQ [jsonPath|$.store.books[0,2]|] rootDoc `shouldBe` getVector books0And2Doc
 
-    it "returns 1To3-index when query is $.store.books[1:3]" $
-      query [jsonPath|$.store.books[1:3]|] rootDoc `shouldBe` getVector books1To3Doc
+    it "returns 1To3-index when queryQQ is $.store.books[1:3]" $
+      queryQQ [jsonPath|$.store.books[1:3]|] rootDoc `shouldBe` getVector books1To3Doc
 
-    it "returns 1To3-index and 0,1-index when query is $.store.books[1:3,0,1]" $
-      query [jsonPath|$.store.books[1:3,0,1]|] rootDoc `shouldBe` getVector books1To3And0And1Doc
+    it "returns 1To3-index and 0,1-index when queryQQ is $.store.books[1:3,0,1]" $
+      queryQQ [jsonPath|$.store.books[1:3,0,1]|] rootDoc `shouldBe` getVector books1To3And0And1Doc
 
-    it "returns slice with query $[5:]" $
-      query [jsonPath|$[5:]|] alphaArr `shouldBe` getVector fgArr
+    it "returns slice with queryQQ $[5:]" $
+      queryQQ [jsonPath|$[5:]|] alphaArr `shouldBe` getVector fgArr
 
-    it "returns slice with query $[1:5:2]" $
-      query [jsonPath|$[1:5:2]|] alphaArr `shouldBe` getVector bdArr
+    it "returns slice with queryQQ $[1:5:2]" $
+      queryQQ [jsonPath|$[1:5:2]|] alphaArr `shouldBe` getVector bdArr
 
-    it "returns slice with query $[5:1:-2]" $
-      query [jsonPath|$[5:1:-2]|] alphaArr `shouldBe` getVector fdArr
+    it "returns slice with queryQQ $[5:1:-2]" $
+      queryQQ [jsonPath|$[5:1:-2]|] alphaArr `shouldBe` getVector fdArr
 
-    it "returns slice with query $[::-1]" $
-      query [jsonPath|$[::-1]|] alphaArr `shouldBe` getVector gfedcbaArr
+    it "returns slice with queryQQ $[::-1]" $
+      queryQQ [jsonPath|$[::-1]|] alphaArr `shouldBe` getVector gfedcbaArr
 
-    it "returns root with query $.*" $
-      query [jsonPath|$.*|] rootDoc `shouldBe` V.singleton rootDoc
+    it "returns root with queryQQ $.*" $
+      queryQQ [jsonPath|$.*|] rootDoc `shouldBe` V.singleton rootDoc
 
-    it "returns root with query $[*]" $
-      query [jsonPath|$[*]|] rootDoc `shouldBe` V.singleton rootDoc
+    it "returns root with queryQQ $[*]" $
+      queryQQ [jsonPath|$[*]|] rootDoc `shouldBe` V.singleton rootDoc
 
-    it "returns descendants with query $..*" $
-      query [jsonPath|$..*|] rfcExample1 `shouldBe` getVector rfcExample1Desc
+    it "returns descendants with queryQQ $..*" $
+      queryQQ [jsonPath|$..*|] rfcExample1 `shouldBe` getVector rfcExample1Desc
 
-    it "returns descendants with query $..[*]" $
-      query [jsonPath|$..[*]|] rfcExample1 `shouldBe` getVector rfcExample1Desc
+    it "returns descendants with queryQQ $..[*]" $
+      queryQQ [jsonPath|$..[*]|] rfcExample1 `shouldBe` getVector rfcExample1Desc
 
     it "returns with filtering: number comparison" $
-      query [jsonPath| $.store.books[?@.price < 20] |] rootDoc
+      queryQQ [jsonPath| $.store.books[?@.price < 20] |] rootDoc
       `shouldBe` getVector lessThanPrice20Books
 
     it "returns with filtering: not operator" $
-      query [jsonPath| $.store.books[?!(@.price < 20)] |] rootDoc
+      queryQQ [jsonPath| $.store.books[?!(@.price < 20)] |] rootDoc
       `shouldBe` getVector books0Doc
 
     it "returns with filtering: string comparison" $
-      query [jsonPath| $.store.books[?@.author == 'Jared Diamond'] |] rootDoc
+      queryQQ [jsonPath| $.store.books[?@.author == 'Jared Diamond'] |] rootDoc
       `shouldBe` getVector books0Doc
 
     it "returns with filtering: test expression" $
-      query [jsonPath| $.store.books[?@.author] |] rootDoc
+      queryQQ [jsonPath| $.store.books[?@.author] |] rootDoc
       `shouldBe` getVector booksDoc
 
     it "returns with filtering: test expr gives empty with non-existent key" $
-      query [jsonPath| $.store.books[?@.not_here] |] rootDoc
+      queryQQ [jsonPath| $.store.books[?@.not_here] |] rootDoc
       `shouldBe` V.empty

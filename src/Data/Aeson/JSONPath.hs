@@ -1,5 +1,6 @@
 module Data.Aeson.JSONPath
   ( query
+  , queryQQ
   , jsonPath)
   where
 
@@ -33,8 +34,13 @@ jsonPath = QuasiQuoter
   , quoteDec = error "Error: quoteDec"
   }
 
-query :: Query -> Value -> Vector Value
-query q root = query' q root root
+query :: String -> Value -> Either P.ParseError (Vector Value)
+query q root = do
+  parsedQuery <- P.parse pQuery ("failed to parse query: " <> q) q
+  return $ queryQQ parsedQuery root
+
+queryQQ :: Query -> Value -> Vector Value
+queryQQ q root = query' q root root
 
 class Queryable a where
   query' :: a -> Value -> Value -> Vector Value
