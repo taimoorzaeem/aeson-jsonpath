@@ -57,13 +57,14 @@ qSegment (Bracketed sels) root current = V.concat $ map (\sel -> qSelector sel r
 qSegment (Dotted key) root current = qSelector (Name key) root current
 qSegment WildcardSegment root current = qSelector WildcardSelector root current
 
+-- TODO: Fix this
 allElemsRecursive :: Value -> Vector Value
-allElemsRecursive (JSON.Object obj) = V.concat [
-    V.fromList (KM.elems obj),
+allElemsRecursive o@(JSON.Object obj) = V.concat [
+    V.singleton o,
     V.concat $ map allElemsRecursive (KM.elems obj)
   ]
-allElemsRecursive (JSON.Array arr) = V.concat [
-    arr,
+allElemsRecursive a@(JSON.Array arr) = V.concat [
+    V.singleton a,
     V.concat $ map allElemsRecursive (V.toList arr)
   ]
 allElemsRecursive _ = V.empty
@@ -76,39 +77,43 @@ qSelector (Index _) _ _ = V.empty
 qSelector (ArraySlice (start,end,step)) _ (JSON.Array arr) = sliceArray start end step arr
 qSelector (ArraySlice _) _ _ = V.empty
 qSelector (Filter orExpr) root current = filterOrExpr orExpr root current
-qSelector WildcardSelector _ current = V.singleton current
+qSelector WildcardSelector _ cur = case cur of
+    (JSON.Object obj) -> V.fromList $ KM.elems obj
+    (JSON.Array arr)  -> arr
+    _                 -> V.empty
 
 
 sliceArray :: Maybe Int -> Maybe Int -> Int -> Vector Value -> Vector Value
-sliceArray start end step doc = getSlice start end step doc
-  where
-    -- TODO: Refactor this code to make it more pretty
-    len = V.length doc
-    normalize i = if i >= 0 then i else len + i
+sliceArray start end step doc =
+  case compare step 0 of
+    GT -> getSliceForward (maybe 0 normalize start) (maybe len normalize end) step doc
+    LT -> getSliceReverse (maybe (len-1) normalize start) (maybe (-1) normalize end) step doc
+    EQ -> V.empty
+    where
+      -- TODO: Refactor this code to make it more pretty
+      len = V.length doc
+      normalize i = if i >= 0 then i else len + i
 
-    sliceNormalized arr' (n_start, n_end) isStepNeg =
-      let (lower, upper) = if isStepNeg then
-            (min (max n_end (-1)) (len-1), min (max n_start (-1)) (len-1))
-          else
-            (min (max n_start 0) len, min (max n_end 0) len)
-      in V.slice lower ((if isStepNeg then 1 else 0)+upper-lower) arr'
+      getSliceForward st en stp arr = loop lower V.empty
+        where
+          (lower,upper) = (min (max st 0) len, min (max en 0) len)
 
-    getSlice _ _ 0 _ = V.empty
-    getSlice (Just st) (Just en) step' arr =
-      filterSlice (sliceNormalized arr (normalize st, normalize en) (step' < 0)) step'
-    getSlice (Just st) Nothing step' arr =
-      filterSlice (sliceNormalized arr (normalize st, len) (step' < 0)) step'
-    getSlice Nothing (Just en) step' arr =
-      filterSlice (sliceNormalized arr (0, normalize en) (step' < 0)) step'
-    getSlice Nothing Nothing step' arr = filterSlice arr step'
+          loop i acc =
+            if i < upper
+              then loop (i+stp) $ V.snoc acc $ (V.!) arr (normalize i)
+            else
+              acc
 
-    -- trying to avoid a step loop and keeping it "functional"
-    filterSlice slice 1   = slice
-    filterSlice slice (-1) = V.reverse slice
-    filterSlice slice n = if n < 0 then
-          V.ifilter (\i _ -> i `mod` (-n) == 0) $ V.reverse $ V.drop (V.length slice `mod` (-n)) slice
-        else
-          V.ifilter (\i _ -> i `mod` n == 0) slice
+      getSliceReverse st en stp arr = loop upper V.empty
+        where
+          (lower,upper) = (min (max en (-1)) (len-1), min (max st (-1)) (len-1))
+
+          loop i acc =
+            if lower < i
+              then loop (i+stp) $ V.snoc acc $ (V.!) arr (normalize i)
+            else
+              acc
+
 
 filterOrExpr :: LogicalOrExpr -> Value -> Value -> Vector Value
 filterOrExpr expr root (JSON.Object obj) = V.filter (evaluateLogicalOrExpr expr root) (V.fromList $ KM.elems obj)

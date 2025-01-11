@@ -3202,7 +3202,8 @@
         {
           "a": null
         }
-      ]
+      ],
+      "tags": [ "function" ]
     },
     {
       "name": "filter, equals, empty node list and empty node list",
@@ -3247,7 +3248,7 @@
         }
       ],
       "tags": [
-        "whitespace"
+        "whitespace", "function"
       ]
     },
     {
