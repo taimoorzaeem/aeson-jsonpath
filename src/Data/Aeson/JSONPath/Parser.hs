@@ -26,20 +26,18 @@ import Data.Functor                  (($>))
 import Data.Char                     (ord)
 import Data.Maybe                    (isNothing, fromMaybe)
 import Data.Scientific               (Scientific, scientific)
+import GHC.Num                       (integerFromInt, integerToInt)
 import Text.ParserCombinators.Parsec ((<|>))
 
 import Prelude
 
 pQuery :: P.Parser Query
-pQuery = pSpaces 
-       *> (P.try pRootQuery <|> P.try pCurrentQuery) 
-       <* pSpaces 
-       <* P.eof
+pQuery = (P.try pRootQuery <|> P.try pCurrentQuery) <* P.eof
 
 pRootQuery :: P.Parser Query
 pRootQuery = do
   P.char '$'
-  segs <- P.many pQuerySegment
+  segs <- P.many (pSpaces *> pQuerySegment)
   return $ Query { queryType = Root, querySegments = segs }
 
 pCurrentQuery :: P.Parser Query
@@ -65,13 +63,15 @@ pSegment isChild = P.try pBracketed
 pBracketed :: P.Parser Segment
 pBracketed = do
   P.char '['
+  pSpaces
   sel <- pSelector
   optionalSels <- P.many pCommaSepSelectors
+  pSpaces
   P.char ']'
   return $ Bracketed (sel:optionalSels)
     where
       pCommaSepSelectors :: P.Parser Selector
-      pCommaSepSelectors = P.try $ P.char ',' *> pSpaces *> pSelector
+      pCommaSepSelectors = P.try $ pSpaces *> P.char ',' *> pSpaces *> pSelector
 
 
 pDotted :: Bool -> P.Parser Segment
@@ -87,8 +87,8 @@ pWildcardSeg isChild = (if isChild then P.string "." else P.string "") *> P.char
   
 pSelector :: P.Parser Selector
 pSelector = P.try pName
-         <|> P.try pIndex
          <|> P.try pSlice 
+         <|> P.try pIndex
          <|> P.try pWildcardSel
          <|> P.try pFilter
 
@@ -99,17 +99,15 @@ pName = Name . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
     pDoubleQuotted = P.char '\"' *> P.many (P.noneOf "\"") <* P.char '\"' 
 
 pIndex :: P.Parser Selector
-pIndex = do
-  idx <- pSignedInt
-  P.notFollowedBy $ P.char ':'
-  return $ Index idx
+pIndex = Index <$> pSignedInt
 
 pSlice :: P.Parser Selector
 pSlice = do
-  start <- P.optionMaybe pSignedInt
+  start <- P.optionMaybe (pSignedInt <* pSpaces)
   P.char ':'
-  end <- P.optionMaybe pSignedInt
-  step <- P.optionMaybe (P.char ':' *> P.optionMaybe pSignedInt)
+  pSpaces
+  end <- P.optionMaybe (pSignedInt <* pSpaces)
+  step <- P.optionMaybe (P.char ':' *> P.optionMaybe (pSpaces *> pSignedInt))
   return $ ArraySlice (start, end, case step of
     Just (Just n) -> n
     _ -> 1)
@@ -246,27 +244,28 @@ pSingularQIndexSeg = do
 
 pSignedInt :: P.Parser Int
 pSignedInt = do
+  P.notFollowedBy (P.string "-0" *> P.optional P.digit) -- no leading -011... etc
+  P.notFollowedBy (P.char   '0' *> P.digit) -- no leading 011... etc
   sign <- P.optionMaybe $ P.char '-'
-  num <- read <$> P.many1 P.digit
-  return $ 
-    case sign of
-      Just _ -> -num
-      Nothing -> num
+  num <- (read <$> P.many1 P.digit) :: P.Parser Integer
+  checkNumOutOfRange num sign
+  where
+    minInt = -9007199254740991
+    maxInt = 9007199254740991
+    checkNumOutOfRange num (Just _) =
+      if -num < minInt then fail "out of range"
+      else return $ integerToInt (-num)
 
-pSignedInteger :: P.Parser Integer
-pSignedInteger = do
-  sign <- P.optionMaybe $ P.char '-'
-  num <- read <$> P.many1 P.digit
-  return $
-    case sign of
-      Just _ -> -num
-      Nothing -> num
+    checkNumOutOfRange num Nothing =
+      if num > maxInt then fail "out of range"
+      else return $ integerToInt num
 
+-- TODO: Fix Double parse error  "1.12e+23"
 pScientific :: P.Parser Scientific
 pScientific = do
-  integer <- pSignedInteger
-  int <- P.optionMaybe (P.char 'e' *> pSignedInt)
-  return $ scientific integer (fromMaybe 0 int)
+  mantissa <- pSignedInt
+  expo <- P.optionMaybe (P.char 'e' *> P.optional (P.char '+') *> pSignedInt)
+  return $ scientific (integerFromInt mantissa) (fromMaybe 0 expo)
 
 pDoubleScientific :: P.Parser Scientific
 pDoubleScientific = do
