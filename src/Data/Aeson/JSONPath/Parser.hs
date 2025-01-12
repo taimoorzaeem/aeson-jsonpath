@@ -186,6 +186,8 @@ pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
 pComparable :: P.Parser Comparable
 pComparable = P.try pCompLitString
               <|> P.try pCompLitNum
+              <|> P.try pCompLitBool
+              <|> P.try pCompLitNull
               <|> P.try pCompSQ
 
 pCompLitString :: P.Parser Comparable
@@ -193,6 +195,12 @@ pCompLitString = CompLitString . T.pack <$> (P.char '\'' *> P.many (P.noneOf "\'
 
 pCompLitNum :: P.Parser Comparable
 pCompLitNum = CompLitNum <$> (P.try pDoubleScientific <|> P.try pScientific)
+
+pCompLitBool :: P.Parser Comparable
+pCompLitBool = CompLitBool <$> (P.try (P.string "true" $> True) <|> P.try (P.string "false" $> False))
+
+pCompLitNull :: P.Parser Comparable
+pCompLitNull = P.string "null" $> CompLitNull
 
 pCompSQ :: P.Parser Comparable
 pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ)

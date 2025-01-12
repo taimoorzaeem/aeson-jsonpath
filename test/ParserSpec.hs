@@ -424,3 +424,43 @@ spec = do
             }) Less (CompLitNum (1.0e-2)))]])]
           }]
         }
+
+      it "bool: $.store.books[?@.is_available == true]" $
+        P.parse pQuery "" "$.store.books[?@.is_available == true]"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Dotted "store"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Dotted "books"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "is_available"]
+            }) Equal (CompLitBool True))]])]
+          }]
+        }
+
+      it "null: $.store.books[?@.is_available == null]" $
+        P.parse pQuery "" "$.store.books[?@.is_available == null]"
+        `shouldBe`
+        Right Query {
+          queryType = Root,
+          querySegments = [QuerySegment {
+            segmentType = Child,
+            segment = Dotted "store"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Dotted "books"
+          }, QuerySegment {
+            segmentType = Child,
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+              singularQueryType = CurrentSQ,
+              singularQuerySegments = [NameSQSeg "is_available"]
+            }) Equal CompLitNull)]])]
+          }]
+        }

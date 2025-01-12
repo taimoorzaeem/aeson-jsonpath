@@ -238,6 +238,23 @@ rfcExample1Desc = [aesonQQ| [
     2
   ]|]
 
+boolsAndNulls :: JSON.Value
+boolsAndNulls = [aesonQQ| [
+    { "a": true },
+    { "a": false },
+    { "a": null }
+  ]|]
+
+
+boolsAndNullsA :: JSON.Value
+boolsAndNullsA = [aesonQQ| [{ "a": true }] |]
+
+boolsAndNullsB :: JSON.Value
+boolsAndNullsB = [aesonQQ| [{ "a": false }] |]
+
+boolsAndNullsC :: JSON.Value
+boolsAndNullsC = [aesonQQ| [{ "a": null }] |]
+
 spec :: Spec
 spec = do
   describe "Run JSPQuery on JSON documents" $ do
@@ -299,6 +316,18 @@ spec = do
     it "returns with filtering: not operator" $
       queryQQ [jsonPath| $.store.books[?!(@.price < 20)] |] rootDoc
       `shouldBe` getVector books0Doc
+
+    it "returns with filtering: true value" $
+      queryQQ [jsonPath| $[?@.a == true] |] boolsAndNulls
+      `shouldBe` getVector boolsAndNullsA
+
+    it "returns with filtering: false value" $
+      queryQQ [jsonPath| $[?@.a == false] |] boolsAndNulls
+      `shouldBe` getVector boolsAndNullsB
+
+    it "returns with filtering: null value" $
+      queryQQ [jsonPath| $[?@.a == null] |] boolsAndNulls
+      `shouldBe` getVector boolsAndNullsC
 
     it "returns with filtering: string comparison" $
       queryQQ [jsonPath| $.store.books[?@.author == 'Jared Diamond'] |] rootDoc

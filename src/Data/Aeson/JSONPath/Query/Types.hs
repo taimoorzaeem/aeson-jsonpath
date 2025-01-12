@@ -95,6 +95,8 @@ data ComparisonOp
 data Comparable
   = CompLitString Text
   | CompLitNum Scientific
+  | CompLitBool Bool
+  | CompLitNull
   | CompSQ SingularQuery
   deriving (Eq, Show, Lift)
 

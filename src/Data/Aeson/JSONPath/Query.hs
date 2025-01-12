@@ -144,15 +144,19 @@ compareVals Equal          = (==)
 compareVals NotEqual       = (/=)
 
 getComparableVal :: Comparable -> Value -> Value -> Value
+getComparableVal (CompLitNum num) _ _ = JSON.Number num
+getComparableVal (CompLitString txt) _ _ = JSON.String txt
+getComparableVal (CompLitBool bool) _ _ = JSON.Bool bool
+getComparableVal CompLitNull _ _ = JSON.Null
 getComparableVal (CompSQ SingularQuery{..}) root cur = case singularQueryType of
   RootSQ -> traverseSingularQSegs root singularQuerySegments
   CurrentSQ -> traverseSingularQSegs cur singularQuerySegments
-getComparableVal (CompLitNum num) _ _ = JSON.Number num
-getComparableVal (CompLitString txt) _ _ = JSON.String txt
 
 traverseSingularQSegs :: Value -> [SingularQuerySegment] -> Value
 traverseSingularQSegs = foldl lookupSingleQSeg
 
+-- TODO: There is a bug here, not existing shouldn't give null
+-- See: https://www.rfc-editor.org/rfc/rfc9535#name-examples-6
 lookupSingleQSeg :: Value -> SingularQuerySegment -> Value
 lookupSingleQSeg (JSON.Object obj) (NameSQSeg txt) = fromMaybe JSON.Null $ KM.lookup (K.fromText txt) obj
 lookupSingleQSeg (JSON.Array arr) (IndexSQSeg idx) = fromMaybe JSON.Null $ (V.!?) arr idx
