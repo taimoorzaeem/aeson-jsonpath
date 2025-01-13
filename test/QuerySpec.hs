@@ -298,10 +298,10 @@ spec = do
       queryQQ [jsonPath|$[::-1]|] alphaArr `shouldBe` getVector gfedcbaArr
 
     it "returns root with queryQQ $.*" $
-      queryQQ [jsonPath|$.*|] rootDoc `shouldBe` V.singleton rootDoc
+      queryQQ [jsonPath|$.*|] rootDoc `shouldBe` V.singleton storeDoc
 
     it "returns root with queryQQ $[*]" $
-      queryQQ [jsonPath|$[*]|] rootDoc `shouldBe` V.singleton rootDoc
+      queryQQ [jsonPath|$[*]|] rootDoc `shouldBe` V.singleton storeDoc
 
     it "returns descendants with queryQQ $..*" $
       queryQQ [jsonPath|$..*|] rfcExample1 `shouldBe` getVector rfcExample1Desc
@@ -310,33 +310,33 @@ spec = do
       queryQQ [jsonPath|$..[*]|] rfcExample1 `shouldBe` getVector rfcExample1Desc
 
     it "returns with filtering: number comparison" $
-      queryQQ [jsonPath| $.store.books[?@.price < 20] |] rootDoc
+      queryQQ [jsonPath|$.store.books[?@.price < 20]|] rootDoc
       `shouldBe` getVector lessThanPrice20Books
 
     it "returns with filtering: not operator" $
-      queryQQ [jsonPath| $.store.books[?!(@.price < 20)] |] rootDoc
+      queryQQ [jsonPath|$.store.books[?!(@.price < 20)]|] rootDoc
       `shouldBe` getVector books0Doc
 
     it "returns with filtering: true value" $
-      queryQQ [jsonPath| $[?@.a == true] |] boolsAndNulls
+      queryQQ [jsonPath|$[?@.a == true]|] boolsAndNulls
       `shouldBe` getVector boolsAndNullsA
 
     it "returns with filtering: false value" $
-      queryQQ [jsonPath| $[?@.a == false] |] boolsAndNulls
+      queryQQ [jsonPath|$[?@.a == false]|] boolsAndNulls
       `shouldBe` getVector boolsAndNullsB
 
     it "returns with filtering: null value" $
-      queryQQ [jsonPath| $[?@.a == null] |] boolsAndNulls
+      queryQQ [jsonPath|$[?@.a == null]|] boolsAndNulls
       `shouldBe` getVector boolsAndNullsC
 
     it "returns with filtering: string comparison" $
-      queryQQ [jsonPath| $.store.books[?@.author == 'Jared Diamond'] |] rootDoc
+      queryQQ [jsonPath|$.store.books[?@.author == 'Jared Diamond']|] rootDoc
       `shouldBe` getVector books0Doc
 
     it "returns with filtering: test expression" $
-      queryQQ [jsonPath| $.store.books[?@.author] |] rootDoc
+      queryQQ [jsonPath|$.store.books[?@.author]|] rootDoc
       `shouldBe` getVector booksDoc
 
     it "returns with filtering: test expr gives empty with non-existent key" $
-      queryQQ [jsonPath| $.store.books[?@.not_here] |] rootDoc
+      queryQQ [jsonPath|$.store.books[?@.not_here]|] rootDoc
       `shouldBe` V.empty

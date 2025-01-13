@@ -37,6 +37,7 @@ data TestCase = TestCase
   , result     :: Maybe (Vector Value)
   , results    :: Maybe [Vector Value]
   , invalidSel :: Maybe Bool
+  , tags       :: Maybe [String]
   } deriving (Show)
 
 instance JSON.FromJSON TestCase where
@@ -48,6 +49,7 @@ instance JSON.FromJSON TestCase where
     <*> o .:? "result"
     <*> o .:? "results"
     <*> o .:? "invalid_selector"
+    <*> o .:? "tags"
 
   parseJSON _ = mzero
 
@@ -57,13 +59,26 @@ spec TestSuite{tests} = do
     mapM_ runTestCase tests
 
 runTestCase :: TestCase -> SpecWith ()
+-- skip function extension tests and unicode tests
+runTestCase tc@TestCase{tags=Just xs, ..} =
+  if (elem "function" xs) || (elem "unicode" xs)
+    then xit name pending
+  else
+    runTestCase tc{tags=Nothing}
+
+-- invalid selector should not parse correctly
 runTestCase TestCase{invalidSel=(Just True), ..} =
-  xit name $ P.parse pQuery "" selector `shouldSatisfy` isLeft
+  xit (name ++ ": " ++ selector) $
+    P.parse pQuery "" selector `shouldSatisfy` isLeft
 
+-- if result is deterministic (one json)
 runTestCase TestCase{result=(Just r), document=(Just doc), ..} =
-  xit name $ query selector doc `shouldBe` Right r
+  xit (name ++ ": " ++ selector) $
+    query selector doc `shouldBe` Right r
 
+-- if result is non-deterministic (any json from the list of results)
 runTestCase TestCase{results=(Just rs), document=(Just doc), ..} = do
-  xit name $ query selector doc `shouldSatisfy` (\x -> elem (fromRight V.empty x) rs)
+  xit (name ++ ": " ++ selector) $
+    query selector doc `shouldSatisfy` (\x -> elem (fromRight V.empty x) rs)
 
 runTestCase _ = pure ()

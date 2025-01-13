@@ -229,17 +229,6 @@ spec = do
         }]
       }
 
-    it "parses query with spaces around" $
-      P.parse pQuery "" "  $.key  "
-      `shouldBe`
-      Right Query {
-        queryType = Root,
-        querySegments = [QuerySegment {
-          segmentType = Child,
-          segment = Dotted "key"
-        }]
-      }
-
     it "parses query: $._" $
       P.parse pQuery "" "$._"
       `shouldBe`
