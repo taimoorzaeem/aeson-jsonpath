@@ -59,9 +59,9 @@ spec TestSuite{tests} = do
     mapM_ runTestCase tests
 
 runTestCase :: TestCase -> SpecWith ()
--- skip function extension tests and unicode tests
+-- skip function extension tests
 runTestCase tc@TestCase{tags=Just xs, ..} =
-  if (elem "function" xs) || (elem "unicode" xs)
+  if (elem "function" xs)
     then xit name pending
   else
     runTestCase tc{tags=Nothing}
