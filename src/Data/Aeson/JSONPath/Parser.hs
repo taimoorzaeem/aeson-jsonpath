@@ -1,4 +1,15 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
+{- |
+Module      : Data.Aeson.JSONPath.Parser
+Description : Parses the raw query to ADT
+Copyright   : (c) 2024-2025 Taimoor Zaeem
+License     : MIT
+Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
+Stability   : Experimental
+Portability : Portable
+
+Parses raw query to Haskell Algebraic Data Types
+-}
 module Data.Aeson.JSONPath.Parser
   ( pQuery )
   where
@@ -6,21 +17,6 @@ module Data.Aeson.JSONPath.Parser
 import qualified Data.Text                      as T
 import qualified Text.ParserCombinators.Parsec  as P
 
-import Data.Aeson.JSONPath.Query.Types (Query (..)
-                                       , QueryType (..)
-                                       , QuerySegment (..)
-                                       , Segment (..)
-                                       , SegmentType (..)
-                                       , Selector (..)
-                                       , LogicalOrExpr (..)
-                                       , LogicalAndExpr (..)
-                                       , BasicExpr (..)
-                                       , ComparisonExpr (..)
-                                       , ComparisonOp (..)
-                                       , Comparable(..)
-                                       , SingularQuery (..)
-                                       , SingularQueryType (..)
-                                       , SingularQuerySegment (..))
 import Data.Functor                  (($>))
 import Data.Char                     (ord, chr)
 import Data.Maybe                    (isNothing, fromMaybe)
@@ -28,10 +24,13 @@ import Data.Scientific               (Scientific, scientific)
 import GHC.Num                       (integerFromInt, integerToInt)
 import Text.ParserCombinators.Parsec ((<|>))
 
+import Data.Aeson.JSONPath.Query.Types
+
 import Prelude
 
+-- | Query parser
 pQuery :: P.Parser Query
-pQuery = (P.try pRootQuery <|> P.try pCurrentQuery) <* P.eof
+pQuery = P.try pRootQuery <* P.eof
 
 pRootQuery :: P.Parser Query
 pRootQuery = do

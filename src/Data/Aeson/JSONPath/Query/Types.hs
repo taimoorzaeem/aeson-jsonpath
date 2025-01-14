@@ -1,4 +1,15 @@
 {-# LANGUAGE DeriveLift #-}
+{- |
+Module      : Data.Aeson.JSONPath.Query.Types
+Description : ADTs used internally
+Copyright   : (c) 2024-2025 Taimoor Zaeem
+License     : MIT
+Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
+Stability   : Experimental
+Portability : Portable
+
+This module contains the data structures.
+-}
 module Data.Aeson.JSONPath.Query.Types
   (Query (..)
   , QueryType (..)
@@ -25,50 +36,57 @@ import Language.Haskell.TH.Syntax  (Lift)
 
 import Prelude
 
+-- |
 data QueryType 
   = Root 
   | Current
   deriving (Eq, Show, Lift)
 
+-- |
 data Query = Query
   { queryType     :: QueryType
   , querySegments :: [QuerySegment]
   } deriving (Eq, Show, Lift)
 
+-- |
 data SegmentType
   = Child
   | Descendant
   deriving (Eq, Show, Lift)
 
+-- |
 data QuerySegment = QuerySegment
   { segmentType :: SegmentType
   , segment     :: Segment
   } deriving (Eq, Show, Lift)
 
+-- |
 data Segment
   = Bracketed [Selector]
   | Dotted Text
   | WildcardSegment
   deriving (Eq, Show, Lift)
 
+-- |
 data Selector
   = Name Text
   | Index Int
-  | ArraySlice Slice
+  | ArraySlice (Maybe Int, Maybe Int, Int)
   | Filter LogicalOrExpr
   | WildcardSelector
   deriving (Eq, Show, Lift)
 
-type Slice = (Maybe Int, Maybe Int, Int)
-
+-- |
 newtype LogicalOrExpr
   = LogicalOr [LogicalAndExpr]
   deriving (Eq, Show, Lift)
 
+-- |
 newtype LogicalAndExpr
   = LogicalAnd [BasicExpr]
   deriving (Eq, Show, Lift)
 
+-- |
 data BasicExpr
   = Paren LogicalOrExpr -- ( expr )
   | NotParen LogicalOrExpr -- not (expr)
@@ -77,12 +95,15 @@ data BasicExpr
   | Comparison ComparisonExpr
   deriving (Eq, Show, Lift)
 
+-- |
 type TestExpr = Query
 
+-- |
 data ComparisonExpr
   = Comp Comparable ComparisonOp Comparable
   deriving (Eq, Show, Lift)
 
+-- |
 data ComparisonOp
   = Less
   | LessOrEqual
@@ -92,6 +113,7 @@ data ComparisonOp
   | NotEqual
   deriving (Eq, Show, Lift)
 
+-- |
 data Comparable
   = CompLitString Text
   | CompLitNum Scientific
@@ -100,14 +122,17 @@ data Comparable
   | CompSQ SingularQuery
   deriving (Eq, Show, Lift)
 
+-- |
 data SingularQueryType = RootSQ | CurrentSQ
   deriving (Eq, Show, Lift)
 
+-- |
 data SingularQuery = SingularQuery
   { singularQueryType     :: SingularQueryType
   , singularQuerySegments :: [SingularQuerySegment]
   } deriving (Eq, Show, Lift)
 
+-- |
 data SingularQuerySegment
   = NameSQSeg Text
   | IndexSQSeg Int

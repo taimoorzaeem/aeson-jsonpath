@@ -1,9 +1,21 @@
 {-# LANGUAGE RecordWildCards #-}
+{- |
+Module      : Data.Aeson.JSONPath.Query
+Description : Algorithm for query runner
+Copyright   : (c) 2024-2025 Taimoor Zaeem
+License     : MIT
+Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
+Stability   : Experimental
+Portability : Portable
+
+This module contains core functions that runs the query on 'Value'.
+-}
 module Data.Aeson.JSONPath.Query
   ( qQuery
   , qQuerySegment
   , qSegment
   , qSelector
+  , Queryable (..)
   )
   where
 
@@ -20,6 +32,23 @@ import Data.Aeson.JSONPath.Query.Types
 
 import Prelude
 
+-- |
+class Queryable a where
+  query' :: a -> Value -> Value -> Vector Value
+
+instance Queryable Query where
+  query' = qQuery
+
+instance Queryable QuerySegment where
+  query' = qQuerySegment
+
+instance Queryable Segment where
+  query' = qSegment
+
+instance Queryable Selector where
+  query' = qSelector
+
+-- |
 qQuery :: Query -> Value -> Value -> Vector Value
 qQuery Query{..} root current = case queryType of
   Root    -> foldl applySegment (V.singleton root)    querySegments
@@ -28,6 +57,7 @@ qQuery Query{..} root current = case queryType of
     applySegment :: Vector Value -> QuerySegment -> Vector Value
     applySegment vec seg = join $ V.map (qQuerySegment seg root) vec
 
+-- |
 qQuerySegment :: QuerySegment -> Value -> Value -> Vector Value
 qQuerySegment QuerySegment{..} root current = case segmentType of
   Child      -> joinAfterMap $ V.singleton current
@@ -36,6 +66,7 @@ qQuerySegment QuerySegment{..} root current = case segmentType of
     joinAfterMap x = join $ V.map (qSegment segment root) x
 
 
+-- |
 qSegment :: Segment -> Value -> Value -> Vector Value
 qSegment (Bracketed sels) root current = V.concat $ map (\sel -> qSelector sel root current) sels
 qSegment (Dotted key) root current = qSelector (Name key) root current
@@ -55,6 +86,7 @@ allElemsRecursive a@(JSON.Array arr) = V.concat [
 allElemsRecursive _ = V.empty
 
 
+-- |
 qSelector :: Selector -> Value -> Value -> Vector Value
 qSelector (Name key) _ (JSON.Object obj) = maybe V.empty  V.singleton $ KM.lookup (K.fromText key) obj
 qSelector (Name _) _ _ = V.empty
