@@ -3,25 +3,12 @@ module ParserSpec
   where
 
 import qualified Text.ParserCombinators.Parsec as P
-import Test.Hspec
 
 import Data.Aeson.JSONPath.Parser       (pQuery)
-import Data.Aeson.JSONPath.Query.Types  (Query (..)
-                                        , QueryType (..)
-                                        , Segment (..)
-                                        , QuerySegment (..)
-                                        , SegmentType (..)
-                                        , Selector (..)
-                                        , LogicalOrExpr (..)
-                                        , LogicalAndExpr (..)
-                                        , BasicExpr (..)
-                                        , ComparisonExpr (..)
-                                        , ComparisonOp (..)
-                                        , Comparable(..)
-                                        , SingularQuery (..)
-                                        , SingularQueryType (..)
-                                        , SingularQuerySegment (..))
-import Data.Either                (isLeft)
+import Data.Either                      (isLeft)
+
+import Data.Aeson.JSONPath.Query.Types
+import Test.Hspec
 import Prelude
 
 spec :: Spec
