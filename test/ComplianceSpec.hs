@@ -58,6 +58,7 @@ spec TestSuite{tests} = do
   describe "Run Compliance Tests" $ do
     mapM_ runTestCase tests
 
+
 runTestCase :: TestCase -> SpecWith ()
 -- skip function extension tests
 runTestCase tc@TestCase{tags=Just xs, ..} =
@@ -68,17 +69,17 @@ runTestCase tc@TestCase{tags=Just xs, ..} =
 
 -- invalid selector should not parse correctly
 runTestCase TestCase{invalidSel=(Just True), ..} =
-  xit (name ++ ": " ++ selector) $
+  it name $
     P.parse pQuery "" selector `shouldSatisfy` isLeft
 
 -- if result is deterministic (one json)
 runTestCase TestCase{result=(Just r), document=(Just doc), ..} =
-  xit (name ++ ": " ++ selector) $
+  it name $
     query selector doc `shouldBe` Right r
 
 -- if result is non-deterministic (any json from the list of results)
 runTestCase TestCase{results=(Just rs), document=(Just doc), ..} = do
-  xit (name ++ ": " ++ selector) $
+  it name $
     query selector doc `shouldSatisfy` (\x -> elem (fromRight V.empty x) rs)
 
 runTestCase _ = pure ()

@@ -10,30 +10,13 @@ module Data.Aeson.JSONPath.Query
 import Control.Monad                   (join)
 import Data.Aeson                      (Value)
 import Data.Vector                     (Vector)
-import Data.Maybe                      (fromMaybe)
 
 import qualified Data.Aeson            as JSON
 import qualified Data.Aeson.KeyMap     as KM
 import qualified Data.Aeson.Key        as K
 import qualified Data.Vector           as V
 
-import Data.Aeson.JSONPath.Query.Types (Query (..)
-                                       , QueryType (..)
-                                       , QuerySegment (..)
-                                       , Selector (..)
-                                       , Segment (..)
-                                       , SegmentType (..)
-                                       , LogicalOrExpr (..)
-                                       , LogicalAndExpr (..)
-                                       , BasicExpr (..)
-                                       , TestExpr
-                                       , ComparisonExpr (..)
-                                       , ComparisonOp (..)
-                                       , Comparable(..)
-                                       , SingularQuery (..)
-                                       , SingularQueryType (..)
-                                       , SingularQuerySegment (..)
-                                       )
+import Data.Aeson.JSONPath.Query.Types
 
 import Prelude
 
@@ -52,12 +35,14 @@ qQuerySegment QuerySegment{..} root current = case segmentType of
   where
     joinAfterMap x = join $ V.map (qSegment segment root) x
 
+
 qSegment :: Segment -> Value -> Value -> Vector Value
 qSegment (Bracketed sels) root current = V.concat $ map (\sel -> qSelector sel root current) sels
 qSegment (Dotted key) root current = qSelector (Name key) root current
 qSegment WildcardSegment root current = qSelector WildcardSelector root current
 
--- TODO: Fix this
+
+-- TODO: Looks kinda ugly, make it pretty <3
 allElemsRecursive :: Value -> Vector Value
 allElemsRecursive o@(JSON.Object obj) = V.concat [
     V.singleton o,
@@ -68,6 +53,7 @@ allElemsRecursive a@(JSON.Array arr) = V.concat [
     V.concat $ map allElemsRecursive (V.toList arr)
   ]
 allElemsRecursive _ = V.empty
+
 
 qSelector :: Selector -> Value -> Value -> Vector Value
 qSelector (Name key) _ (JSON.Object obj) = maybe V.empty  V.singleton $ KM.lookup (K.fromText key) obj
@@ -90,7 +76,7 @@ sliceArray start end step doc =
     LT -> getSliceReverse (maybe (len-1) normalize start) (maybe (-1) normalize end) step doc
     EQ -> V.empty
     where
-      -- TODO: Refactor this code to make it more pretty
+      -- TODO: Looks kinda ugly, make it pretty <3
       len = V.length doc
       normalize i = if i >= 0 then i else len + i
 
@@ -120,11 +106,14 @@ filterOrExpr expr root (JSON.Object obj) = V.filter (evaluateLogicalOrExpr expr 
 filterOrExpr expr root (JSON.Array arr) = V.filter (evaluateLogicalOrExpr expr root) arr
 filterOrExpr _ _ _ = V.empty
 
+
 evaluateLogicalOrExpr :: LogicalOrExpr -> Value -> Value -> Bool
 evaluateLogicalOrExpr (LogicalOr exprs) root cur = any (\x -> evaluateLogicalAndExpr x root cur) exprs
 
+
 evaluateLogicalAndExpr :: LogicalAndExpr -> Value -> Value -> Bool
 evaluateLogicalAndExpr (LogicalAnd exprs) root cur = all (\x -> evaluateBasicExpr x root cur) exprs
+
 
 evaluateBasicExpr :: BasicExpr -> Value -> Value -> Bool
 evaluateBasicExpr (Paren expr) root cur = evaluateLogicalOrExpr expr root cur
@@ -137,32 +126,40 @@ evaluateBasicExpr (Comparison expr) root cur = evaluateCompExpr expr root cur
 evaluateTestExpr :: TestExpr -> Value -> Value -> Bool
 evaluateTestExpr expr root cur = not $ null $ qQuery expr root cur
 
+
 evaluateCompExpr :: ComparisonExpr -> Value -> Value -> Bool
 evaluateCompExpr (Comp leftC op rightC) root cur  = compareVals op (getComparableVal leftC root cur) (getComparableVal rightC root cur)
 
-compareVals :: (Ord a) => ComparisonOp -> a -> a -> Bool
-compareVals Less           = (<)
-compareVals LessOrEqual    = (<=)
-compareVals Greater        = (>)
-compareVals GreaterOrEqual = (>=)
-compareVals Equal          = (==)
-compareVals NotEqual       = (/=)
 
-getComparableVal :: Comparable -> Value -> Value -> Value
-getComparableVal (CompLitNum num) _ _ = JSON.Number num
-getComparableVal (CompLitString txt) _ _ = JSON.String txt
-getComparableVal (CompLitBool bool) _ _ = JSON.Bool bool
-getComparableVal CompLitNull _ _ = JSON.Null
+compareVals :: ComparisonOp -> Maybe Value -> Maybe Value -> Bool
+compareVals Less (Just (JSON.String s1)) (Just (JSON.String s2)) = s1 < s2
+compareVals Less (Just (JSON.Number n1)) (Just (JSON.Number n2)) = n1 < n2
+compareVals Less _  _ = False
+
+compareVals LessOrEqual    o1 o2 = compareVals Less o1 o2 || compareVals Equal o1 o2
+compareVals Greater        o1 o2 = compareVals Less o2 o1
+compareVals GreaterOrEqual o1 o2 = compareVals Less o2 o1 || compareVals Equal o1 o2
+compareVals Equal          o1 o2 = o1 == o2
+compareVals NotEqual       o1 o2 = o1 /= o2
+
+
+getComparableVal :: Comparable -> Value -> Value -> Maybe Value
+getComparableVal (CompLitNum num) _ _ = Just $ JSON.Number num
+getComparableVal (CompLitString txt) _ _ = Just $ JSON.String txt
+getComparableVal (CompLitBool bool) _ _ = Just $ JSON.Bool bool
+getComparableVal CompLitNull _ _ = Just JSON.Null
 getComparableVal (CompSQ SingularQuery{..}) root cur = case singularQueryType of
-  RootSQ -> traverseSingularQSegs root singularQuerySegments
-  CurrentSQ -> traverseSingularQSegs cur singularQuerySegments
+  RootSQ -> traverseSingularQSegs (Just root) singularQuerySegments
+  CurrentSQ -> traverseSingularQSegs (Just cur) singularQuerySegments
 
-traverseSingularQSegs :: Value -> [SingularQuerySegment] -> Value
+
+traverseSingularQSegs :: Maybe Value -> [SingularQuerySegment] -> Maybe Value
 traverseSingularQSegs = foldl lookupSingleQSeg
+
 
 -- TODO: There is a bug here, not existing shouldn't give null
 -- See: https://www.rfc-editor.org/rfc/rfc9535#name-examples-6
-lookupSingleQSeg :: Value -> SingularQuerySegment -> Value
-lookupSingleQSeg (JSON.Object obj) (NameSQSeg txt) = fromMaybe JSON.Null $ KM.lookup (K.fromText txt) obj
-lookupSingleQSeg (JSON.Array arr) (IndexSQSeg idx) = fromMaybe JSON.Null $ (V.!?) arr idx
-lookupSingleQSeg _ _ = JSON.Null
+lookupSingleQSeg :: Maybe Value -> SingularQuerySegment -> Maybe Value
+lookupSingleQSeg (Just (JSON.Object obj)) (NameSQSeg txt) = KM.lookup (K.fromText txt) obj
+lookupSingleQSeg (Just (JSON.Array arr)) (IndexSQSeg idx) = (V.!?) arr idx
+lookupSingleQSeg _ _ = Nothing
