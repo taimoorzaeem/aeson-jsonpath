@@ -4,10 +4,9 @@ All notable changes to this package are documented in this file. This project ad
 
 ## Unreleased
 
-- Allow spaces around the JSONPath query
-- Always return `Vector Value` and rename `runJSPQuery` to `query`
-- Replace hyphen with underscore in `member-name-shorthand`
+- Always return `Vector Value`
 - Implement Filter Selector
+- Introduce JSONPath Standard Compliance Testing, See: [test-suite](https://github.com/jsonpath-standard/jsonpath-compliance-test-suite)
 
 ## 0.2.0.0
 
