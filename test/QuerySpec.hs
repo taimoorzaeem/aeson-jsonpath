@@ -257,7 +257,7 @@ boolsAndNullsC = [aesonQQ| [{ "a": null }] |]
 
 spec :: Spec
 spec = do
-  describe "Run JSPQuery on JSON documents" $ do
+  describe "test query" $ do
     it "returns root document when query is $" $
       queryQQ [jsonPath|$|] rootDoc `shouldBe` V.singleton rootDoc
 

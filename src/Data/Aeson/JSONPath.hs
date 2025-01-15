@@ -17,6 +17,8 @@ module Data.Aeson.JSONPath
   -- * API
     query
   , queryQQ
+  , queryLocated
+  , queryLocatedQQ
 
   -- * QuasiQuoter
   , jsonPath
@@ -74,16 +76,41 @@ query q root = do
 -- Use when query string is known at compile time
 --
 -- @
--- artist = queryQQ [jsonPath| $.artist |] json -- successfully compiles
+-- artist = queryQQ [jsonPath|$.artist|] json -- successfully compiles
 --
 -- >>> artist
 -- [String "David Bowie"]
 -- @
 -- @
--- artist = queryQQ [jsonPath| $.art[ist |] json -- fails at compilation time
+-- artist = queryQQ [jsonPath|$.art[ist|] json -- fails at compilation time
 -- @
 queryQQ :: Query -> Value -> Vector Value
 queryQQ q root = query' q root root
+
+-- |
+-- Get the location of the returned nodes along with the node
+--
+-- @
+-- >>> queryLocated "$.title" json
+-- Right [("$[\'title\']",String "Space Oddity")]
+-- @
+queryLocated :: String -> Value -> Either P.ParseError (Vector (String, Value))
+queryLocated q root = do
+  parsedQuery <- P.parse pQuery ("failed to parse query: " <> q) q
+  return $ queryLocatedQQ parsedQuery root
+
+-- |
+-- Same as 'queryLocated' but allows QuasiQuoter
+--
+-- @
+-- artist = queryLocatedQQ [jsonPath|$.*|] json -- successfully compiles
+--
+-- >>> artist
+-- [("$[\'artist\']",String "David Bowie"),
+--  ("$[\'title\']",String "Space Oddity")]
+-- @
+queryLocatedQQ :: Query -> Value -> Vector (String, Value)
+queryLocatedQQ q root = queryLocated' q root root "$"
 
 -- $use
 --

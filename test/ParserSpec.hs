@@ -13,7 +13,7 @@ import Prelude
 
 spec :: Spec
 spec = do
-  describe "Parse JSPQuery" $ do
+  describe "Parse query string" $ do
     it "parses query: $" $
       P.parse pQuery "" "$"
       `shouldBe`
