@@ -12,6 +12,7 @@ import Data.Either                  (fromRight)
 import qualified ParserSpec
 import qualified QuerySpec
 import qualified ComplianceSpec
+import qualified LocatedSpec
 import qualified Paths_aeson_jsonpath as Paths
 
 import ComplianceSpec   (TestSuite (..))
@@ -25,6 +26,7 @@ allSpecs cts = do
     ParserSpec.spec
     QuerySpec.spec
     ComplianceSpec.spec (fromRight TestSuite{tests=[]} cts)
+    LocatedSpec.spec
 
 readCtsFile :: FilePath -> IO (Either String TestSuite)
 readCtsFile filePath = do

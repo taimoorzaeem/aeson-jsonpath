@@ -57,6 +57,7 @@ test-suite spec
   other-modules:      ParserSpec
                       QuerySpec
                       ComplianceSpec
+                      LocatedSpec
                       Paths_aeson_jsonpath
   build-depends:      aeson                     >= 2.0.3 && < 2.3
                     , aeson-jsonpath

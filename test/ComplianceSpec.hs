@@ -55,7 +55,7 @@ instance JSON.FromJSON TestCase where
 
 spec :: TestSuite -> Spec
 spec TestSuite{tests} = do
-  describe "Run Compliance Tests" $ do
+  describe "compliance tests" $ do
     mapM_ runTestCase tests
 
 
