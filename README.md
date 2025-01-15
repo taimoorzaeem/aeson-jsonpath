@@ -1,46 +1,149 @@
 # aeson-jsonpath
 
-![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg?event=push) [![hackage-docs](https://img.shields.io/badge/hackage-v0.2.0.0-blue)](https://hackage.haskell.org/package/aeson-jsonpath)
+![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg?event=push) [![hackage-docs](https://img.shields.io/badge/hackage-v0.3.0.0-blue)](https://hackage.haskell.org/package/aeson-jsonpath)
 
 Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson).
 
 ## Roadmap
 
-- [ ] Selectors
+- [x] Selectors
   - [x] Name Selector
   - [x] Index Selector
   - [x] Slice Selector
   - [x] Wildcard Selector
-  - [ ] Filter Selector
+  - [x] Filter Selector
 - [x] Segments
   - [x] Child Segment
   - [x] Descendant Segment
+- [x] Node Locations (Normalized Path)
 - [ ] Function Extensions
 - [ ] Setting Values (Non-RFC)
 
-## Why use this?
-
-- Provides a clean interface (single function call) to run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson) objects. 
-- The parser is written in an extendable way and hence it will be able to provide newer features in our future releases possibly without any breaking changes.
+## Quick Start
 
 ```haskell
 {-# LANGUAGE QuasiQuotes #-}
-import Data.Aeson          (Value (..))
-import Data.Aeson.JSONPath (runJSPQuery, jsonPath)
+import Data.Aeson           (Value (..))
+import Data.Aeson.QQ.Simple (aesonQQ)
+import Data.Aeson.JSONPath  (query, queryLocated, jsonPath)
 
-jsonDoc :: Value -- aeson value
+track = [aesonQQ| { "artist": "Duster", "title": "Earth Moon Transit" } |]
 
--- usage example
-runJSPQuery [jsonPath|$|] jsonDoc
-runJSPQuery [jsonPath|$.*|] jsonDoc
-runJSPQuery [jsonPath|$..*|] jsonDoc
-runJSPQuery [jsonPath|$.store|] jsonDoc
-runJSPQuery [jsonPath|$.store.books|] jsonDoc
-runJSPQuery [jsonPath|$.store.books[0]|] jsonDoc
-runJSPQuery [jsonPath|$.store.books[-4]|] jsonDoc
-runJSPQuery [jsonPath|$.store.books[1:4:-1]|] jsonDoc
-runJSPQuery [jsonPath|$.store.books[1,2:5,7]|] jsonDoc
+ghci> query "$.artist" track -- child member shorthand
+Right [String "Duster"]
+
+ghci> queryLocated "$.*" track -- child wildcard segment
+Right [
+  ("$['artist']", String "Duster"),
+  ("$['title']", String "Earth Moon Transit")
+]
 ```
+
+## More Examples
+
+```haskell
+{-# LANGUAGE QuasiQuotes #-}
+import Data.Aeson           (Value (..))
+import Data.Aeson.QQ.Simple (aesonQQ)
+import Data.Aeson.JSONPath  (query, queryLocated, jsonPath)
+
+json = [aesonQQ| {
+  "shop": {
+    "movies": [
+      {
+        "title": "Mandy",
+        "director": "Panos Cosmatos",
+        "year": 2018
+      },
+      {
+        "title": "Lawrence Anyways",
+        "director": "Xavier Dolan",
+        "year": 2012
+      }
+    ]
+  }
+}|]
+```
+
+### Child Segment
+
+```haskell
+ghci> query "$.shop.movies[0].title" json
+Right [String "Mandy"]
+
+ghci> query "$.shop.movies[0].*" json
+Right [
+  String "Mandy",
+  String "Panos Cosmatos",
+  Number 2018.0
+]
+
+ghci> query "$['shop']['new-movies']" json
+Right []
+```
+
+### Descendant Segment
+
+```haskell
+-- get all values with key "director", recursively
+ghci> query "$..director" json
+Right [
+  String "Panos Cosmatos",
+  String "Xavier Dolan"
+]
+```
+
+### Slice Selector
+
+```haskell
+ghci> query "$[2:5]" [aesonQQ| [1,2,3,4,5,6] |]
+Right [
+  Number 3.0,
+  Number 4.0,
+  Number 5.0
+]
+```
+
+### Filter Selector
+
+```haskell
+ghci> query "$.shop.movies[?@.year < 2015]" json
+Right [
+  Object (fromList [
+    ("director",String "Xavier Dolan"),
+    ("title",String "Lawrence Anyways"),
+    ("year",Number 2012.0)
+  ])
+]
+
+ghci> queryLocated "$.shop.movies[?@.director == 'Xavier Dolan']" json
+Right [
+  (
+    "$['shop']['movies'][1]",
+    Object (fromList [
+      ("director",String "Xavier Dolan"),
+      ("title",String "Lawrence Anyways"),
+      ("year",Number 2012.0)
+    ])
+  )
+]
+```
+
+### QuasiQuoter
+
+The functions `queryQQ` and `queryLocatedQQ` can be used with the `jsonPath` quasi quoter.
+
+```haskell
+queryQQ [jsonPath|$.shop.movies|] json -- compiles successfully
+
+queryQQ [jsonPath|$.shop$$movies|] json -- compilation error, doesn't parse
+```
+
+## Testing
+
+It is tested using 10000+ lines test suite given by [jsonpath-compliance-test-suite](https://github.com/jsonpath-standard/jsonpath-compliance-test-suite) :rocket:.
+
+**Note:** All tests pass except tests related to **function extensions** which we have not implemented yet.
 
 ## Development
 
