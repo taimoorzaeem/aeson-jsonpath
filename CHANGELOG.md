@@ -7,6 +7,7 @@ All notable changes to this package are documented in this file. This project ad
 - Always return `Vector Value`
 - Implement Filter Selector
 - Introduce JSONPath Standard Compliance Testing, See: [test-suite](https://github.com/jsonpath-standard/jsonpath-compliance-test-suite)
+- Add function `queryLocated` which also returns node locations
 
 ## 0.2.0.0
 
