@@ -2,7 +2,7 @@
 
 All notable changes to this package are documented in this file. This project adheres to [Haskell PVP](https://pvp.haskell.org/) versioning.
 
-## Unreleased
+## 0.3.0.0
 
 - Always return `Vector Value`
 - Implement Filter Selector
