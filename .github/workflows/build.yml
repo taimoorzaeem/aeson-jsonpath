@@ -42,7 +42,7 @@ jobs:
   stack:
     strategy:
       matrix:
-        resolver: ['lts-23.3', 'nightly']
+        resolver: ['lts', 'nightly']
       fail-fast: false
     name: Stack - Linux Resolver ${{ matrix.resolver }}
     runs-on: ubuntu-24.04
@@ -62,3 +62,6 @@ jobs:
 
     - name: Build the project with resolver ${{ matrix.resolver }}
       run: stack build --resolver ${{ matrix.resolver }}
+
+    - name: Run tests with resolver ${{ matrix.resolver }}
+      run: stack test --resolver ${{ matrix.resolver }}

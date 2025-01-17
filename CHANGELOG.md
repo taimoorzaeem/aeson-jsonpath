@@ -2,6 +2,10 @@
 
 All notable changes to this package are documented in this file. This project adheres to [Haskell PVP](https://pvp.haskell.org/) versioning.
 
+## Unreleased
+
+- #31, Fix `test/cts.json` not included in hackage bundle
+
 ## 0.3.0.0
 
 - Always return `Vector Value`
