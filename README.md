@@ -1,6 +1,6 @@
 # aeson-jsonpath
 
-![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg?event=push) [![hackage-docs](https://img.shields.io/badge/hackage-v0.3.0.0-blue)](https://hackage.haskell.org/package/aeson-jsonpath)
+![ci-badge](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg?event=push) [![hackage-docs](https://img.shields.io/badge/hackage-v0.3.0.1-blue)](https://hackage.haskell.org/package/aeson-jsonpath) [![Donate](https://img.shields.io/badge/Donate-Patreon-red)](https://www.patreon.com/taimoorzaeem) ![Compliance](https://img.shields.io/badge/Compliance-Passing-brightgreen)
 
 Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson).
 
@@ -116,14 +116,14 @@ Right [
   ])
 ]
 
-ghci> queryLocated "$.shop.movies[?@.director == 'Xavier Dolan']" json
+ghci> queryLocated "$.shop.movies[?@.director == 'Panos Cosmatos']" json
 Right [
   (
-    "$['shop']['movies'][1]",
+    "$['shop']['movies'][0]",
     Object (fromList [
-      ("director",String "Xavier Dolan"),
-      ("title",String "Lawrence Anyways"),
-      ("year",Number 2012.0)
+      ("director",String "Panos Cosmatos"),
+      ("title",String "Mandy"),
+      ("year",Number 2018.0)
     ])
   )
 ]

@@ -2,7 +2,7 @@
 
 All notable changes to this package are documented in this file. This project adheres to [Haskell PVP](https://pvp.haskell.org/) versioning.
 
-## Unreleased
+## 0.3.0.1
 
 - #31, Fix `test/cts.json` not included in hackage bundle
 
