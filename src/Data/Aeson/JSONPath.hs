@@ -6,8 +6,6 @@ License     : MIT
 Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
 Stability   : Experimental
 Portability : Portable
-
-Run JSONPath queries on Aeson Values using methods exported in this module.
 -}
 module Data.Aeson.JSONPath
   (
@@ -27,14 +25,15 @@ module Data.Aeson.JSONPath
 
 import qualified Text.ParserCombinators.Parsec as P
 
-import Data.Aeson                   (Value)
-import Data.Vector                  (Vector)
-import Language.Haskell.TH.Quote    (QuasiQuoter (..))
-import Language.Haskell.TH.Syntax   (lift)
+import Data.Aeson                  (Value)
+import Data.Vector                 (Vector)
+import Language.Haskell.TH.Quote   (QuasiQuoter (..))
+import Language.Haskell.TH.Syntax  (lift)
 
-import Data.Aeson.JSONPath.Query.Types (Query (..))
-import Data.Aeson.JSONPath.Query       (Queryable (..))
-import Data.Aeson.JSONPath.Parser      (pQuery)
+import Data.Aeson.JSONPath.Parser  (pQuery)
+import Data.Aeson.JSONPath.Query   (qQuery, qQueryLocated)
+
+import Data.Aeson.JSONPath.Types
 
 import Prelude
 
@@ -85,7 +84,11 @@ query q root = do
 -- artist = queryQQ [jsonPath|$.art[ist|] json -- fails at compilation time
 -- @
 queryQQ :: Query -> Value -> Vector Value
-queryQQ q root = query' q root root
+queryQQ q root = qQuery q QueryState {
+    rootVal = root
+  , curVal = root
+  , executeQuery = qQuery
+}
 
 -- |
 -- Get the location of the returned nodes along with the node
@@ -110,7 +113,11 @@ queryLocated q root = do
 --  ("$[\'title\']",String "Space Oddity")]
 -- @
 queryLocatedQQ :: Query -> Value -> Vector (String, Value)
-queryLocatedQQ q root = queryLocated' q root root "$"
+queryLocatedQQ q root = qQueryLocated q QueryState {
+    rootVal = root
+  , curVal = root
+  , executeQuery = qQuery
+} "$"
 
 -- $use
 --

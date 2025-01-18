@@ -7,17 +7,18 @@ import qualified Data.Vector       as V
 
 import Data.Aeson.JSONPath  (queryLocatedQQ, jsonPath)
 import Data.Aeson.QQ.Simple (aesonQQ)
+import Data.Aeson           (Value)
 import Data.Vector          (Vector)
 import Test.Hspec
 
 import Prelude
 
-getVector :: JSON.Value -> Vector JSON.Value
+getVector :: Value -> Vector Value
 getVector (JSON.Array arr) = arr
 getVector _ = V.empty
 
 -- taken from https://serdejsonpath.live/
-rootDoc :: JSON.Value
+rootDoc :: Value
 rootDoc = [aesonQQ|{
     "store": {
       "books": [
@@ -50,7 +51,7 @@ rootDoc = [aesonQQ|{
   }|]
 
 
-storeDoc :: JSON.Value
+storeDoc :: Value
 storeDoc = [aesonQQ|
   {
     "books": [
@@ -81,7 +82,7 @@ storeDoc = [aesonQQ|
     ]
   }|]
 
-booksDoc :: JSON.Value
+booksDoc :: Value
 booksDoc = [aesonQQ| [
       {
         "title": "Guns, Germs, and Steel",
@@ -110,7 +111,7 @@ booksDoc = [aesonQQ| [
   ]|]
 
 
-books0Doc :: JSON.Value
+books0Doc :: Value
 books0Doc = [aesonQQ|[
       {
         "title": "Guns, Germs, and Steel",

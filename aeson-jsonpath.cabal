@@ -36,7 +36,15 @@ library
   exposed-modules:    Data.Aeson.JSONPath
                       Data.Aeson.JSONPath.Parser
                       Data.Aeson.JSONPath.Query
-                      Data.Aeson.JSONPath.Query.Types
+                      Data.Aeson.JSONPath.Query.Query
+                      Data.Aeson.JSONPath.Query.Segment
+                      Data.Aeson.JSONPath.Query.Selector
+                      Data.Aeson.JSONPath.Query.Filter
+                      Data.Aeson.JSONPath.Types
+                      Data.Aeson.JSONPath.Types.Query
+                      Data.Aeson.JSONPath.Types.Segment
+                      Data.Aeson.JSONPath.Types.Selector
+                      Data.Aeson.JSONPath.Types.Filter
   build-depends:      aeson                     >= 2.0.3 && < 2.3
                     , base                      >= 4.9 && < 4.22
                     , parsec                    >= 3.1.11 && < 3.2

@@ -2,22 +2,24 @@ module QuerySpec
   ( spec )
   where
 
-import qualified Data.Aeson        as JSON
 import qualified Data.Vector       as V
+import qualified Data.Aeson        as JSON
 
-import Data.Aeson.JSONPath  (queryQQ, jsonPath)
 import Data.Aeson.QQ.Simple (aesonQQ)
+import Data.Aeson           (Value)
 import Data.Vector          (Vector)
 import Test.Hspec
 
+import Data.Aeson.JSONPath  (queryQQ, jsonPath)
+
 import Prelude
 
-getVector :: JSON.Value -> Vector JSON.Value
+getVector :: Value -> Vector Value
 getVector (JSON.Array arr) = arr
 getVector _ = V.empty
 
 -- taken from https://serdejsonpath.live/
-rootDoc :: JSON.Value
+rootDoc :: Value
 rootDoc = [aesonQQ|{
     "store": {
       "books": [
@@ -50,7 +52,7 @@ rootDoc = [aesonQQ|{
   }|]
 
 
-storeDoc :: JSON.Value
+storeDoc :: Value
 storeDoc = [aesonQQ|
   {
     "books": [
@@ -81,7 +83,7 @@ storeDoc = [aesonQQ|
     ]
   }|]
 
-booksDoc :: JSON.Value
+booksDoc :: Value
 booksDoc = [aesonQQ| [
       {
         "title": "Guns, Germs, and Steel",
@@ -110,7 +112,7 @@ booksDoc = [aesonQQ| [
   ]|]
 
 
-books0Doc :: JSON.Value
+books0Doc :: Value
 books0Doc = [aesonQQ|[
       {
         "title": "Guns, Germs, and Steel",
@@ -120,7 +122,7 @@ books0Doc = [aesonQQ|[
       }
   ]|]
 
-books0And2Doc :: JSON.Value
+books0And2Doc :: Value
 books0And2Doc = [aesonQQ|[
       {
         "title": "Guns, Germs, and Steel",
@@ -136,7 +138,7 @@ books0And2Doc = [aesonQQ|[
       }
   ]|]
 
-books1To3Doc :: JSON.Value
+books1To3Doc :: Value
 books1To3Doc = [aesonQQ|[
       {
         "title": "David Copperfield",
@@ -152,7 +154,7 @@ books1To3Doc = [aesonQQ|[
       }
   ]|]
 
-books1To3And0And1Doc :: JSON.Value
+books1To3And0And1Doc :: Value
 books1To3And0And1Doc = [aesonQQ|[
       {
         "title": "David Copperfield",
@@ -180,7 +182,7 @@ books1To3And0And1Doc = [aesonQQ|[
       }
   ]|]
 
-lessThanPrice20Books :: JSON.Value
+lessThanPrice20Books :: Value
 lessThanPrice20Books = [aesonQQ| [
       {
         "title": "David Copperfield",
@@ -202,28 +204,28 @@ lessThanPrice20Books = [aesonQQ| [
       }
   ]|]
 
-alphaArr :: JSON.Value
+alphaArr :: Value
 alphaArr = [aesonQQ| ["a","b","c","d","e","f","g"] |]
 
-fgArr :: JSON.Value
+fgArr :: Value
 fgArr = [aesonQQ| ["f","g"] |]
 
-bdArr :: JSON.Value
+bdArr :: Value
 bdArr = [aesonQQ| ["b","d"] |]
 
-fdArr :: JSON.Value
+fdArr :: Value
 fdArr = [aesonQQ| ["f","d"] |]
 
-gfedcbaArr :: JSON.Value
+gfedcbaArr :: Value
 gfedcbaArr = [aesonQQ| ["g","f","e","d","c","b","a"] |]
 
-rfcExample1 :: JSON.Value
+rfcExample1 :: Value
 rfcExample1 = [aesonQQ| {
     "o": {"j": 1, "k": 2},
     "a": [5, 3, [{"j": 4}, {"k": 6}]]
   } |]
 
-rfcExample1Desc :: JSON.Value
+rfcExample1Desc :: Value
 rfcExample1Desc = [aesonQQ| [
     [5, 3, [{"j": 4}, {"k": 6}]],
     {"j": 1, "k": 2},
@@ -238,7 +240,7 @@ rfcExample1Desc = [aesonQQ| [
     2
   ]|]
 
-boolsAndNulls :: JSON.Value
+boolsAndNulls :: Value
 boolsAndNulls = [aesonQQ| [
     { "a": true },
     { "a": false },
@@ -246,13 +248,13 @@ boolsAndNulls = [aesonQQ| [
   ]|]
 
 
-boolsAndNullsA :: JSON.Value
+boolsAndNullsA :: Value
 boolsAndNullsA = [aesonQQ| [{ "a": true }] |]
 
-boolsAndNullsB :: JSON.Value
+boolsAndNullsB :: Value
 boolsAndNullsB = [aesonQQ| [{ "a": false }] |]
 
-boolsAndNullsC :: JSON.Value
+boolsAndNullsC :: Value
 boolsAndNullsC = [aesonQQ| [{ "a": null }] |]
 
 spec :: Spec

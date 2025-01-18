@@ -1,102 +1,51 @@
 {-# LANGUAGE DeriveLift #-}
 {- |
-Module      : Data.Aeson.JSONPath.Query.Types
-Description : ADTs used internally
+Module      : Data.Aeson.JSONPath.Types.Filter
+Description : 
 Copyright   : (c) 2024-2025 Taimoor Zaeem
 License     : MIT
 Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
 Stability   : Experimental
 Portability : Portable
-
-This module contains the data structures.
 -}
-module Data.Aeson.JSONPath.Query.Types
-  (Query (..)
-  , QueryType (..)
-  , Segment (..)
-  , QuerySegment (..)
-  , SegmentType (..)
-  , Selector (..)
-  , LogicalOrExpr (..)
+module Data.Aeson.JSONPath.Types.Filter
+  (LogicalOrExpr (..)
   , LogicalAndExpr (..)
   , BasicExpr (..)
-  , TestExpr
   , ComparisonExpr (..)
   , ComparisonOp (..)
-  , Comparable(..)
-  , SingularQuery (..)
+  , Comparable (..)
   , SingularQueryType (..)
+  , SingularQuery (..)
   , SingularQuerySegment (..)
   )
   where
 
 import Data.Text                   (Text)
 import Data.Scientific             (Scientific)
+
 import Language.Haskell.TH.Syntax  (Lift)
 
 import Prelude
 
 -- |
-data QueryType 
-  = Root 
-  | Current
+newtype LogicalOrExpr a
+  = LogicalOr [LogicalAndExpr a]
   deriving (Eq, Show, Lift)
 
 -- |
-data Query = Query
-  { queryType     :: QueryType
-  , querySegments :: [QuerySegment]
-  } deriving (Eq, Show, Lift)
-
--- |
-data SegmentType
-  = Child
-  | Descendant
+newtype LogicalAndExpr a
+  = LogicalAnd [BasicExpr a]
   deriving (Eq, Show, Lift)
 
 -- |
-data QuerySegment = QuerySegment
-  { segmentType :: SegmentType
-  , segment     :: Segment
-  } deriving (Eq, Show, Lift)
-
--- |
-data Segment
-  = Bracketed [Selector]
-  | Dotted Text
-  | WildcardSegment
-  deriving (Eq, Show, Lift)
-
--- |
-data Selector
-  = Name Text
-  | Index Int
-  | ArraySlice (Maybe Int, Maybe Int, Int)
-  | Filter LogicalOrExpr
-  | WildcardSelector
-  deriving (Eq, Show, Lift)
-
--- |
-newtype LogicalOrExpr
-  = LogicalOr [LogicalAndExpr]
-  deriving (Eq, Show, Lift)
-
--- |
-newtype LogicalAndExpr
-  = LogicalAnd [BasicExpr]
-  deriving (Eq, Show, Lift)
-
--- |
-data BasicExpr
-  = Paren LogicalOrExpr -- ( expr )
-  | NotParen LogicalOrExpr -- not (expr)
-  | Test TestExpr -- expr
-  | NotTest TestExpr -- not expr
+data BasicExpr a
+  = Paren (LogicalOrExpr a) -- ( expr )
+  | NotParen (LogicalOrExpr a) -- not (expr)
+  | Test a -- query
+  | NotTest a -- not query
   | Comparison ComparisonExpr
   deriving (Eq, Show, Lift)
-
--- |
-type TestExpr = Query
 
 -- |
 data ComparisonExpr

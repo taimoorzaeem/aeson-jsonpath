@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 {- |
 Module      : Data.Aeson.JSONPath.Parser
-Description : Parses the raw query to ADT
+Description : 
 Copyright   : (c) 2024-2025 Taimoor Zaeem
 License     : MIT
 Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
@@ -24,7 +24,7 @@ import Data.Scientific               (Scientific, scientific)
 import GHC.Num                       (integerFromInt, integerToInt)
 import Text.ParserCombinators.Parsec ((<|>))
 
-import Data.Aeson.JSONPath.Query.Types
+import Data.Aeson.JSONPath.Types
 
 import Prelude
 
@@ -35,44 +35,44 @@ pQuery = P.try pRootQuery <* P.eof
 pRootQuery :: P.Parser Query
 pRootQuery = do
   P.char '$'
-  segs <- P.many (pSpaces *> pQuerySegment)
+  segs <- P.many (pSpaces *> pQuerySegment (P.try pRootQuery <|> P.try pCurrentQuery))
   return $ Query { queryType = Root, querySegments = segs }
 
 pCurrentQuery :: P.Parser Query
 pCurrentQuery = do
   P.char '@'
-  segs <- P.many pQuerySegment
+  segs <- P.many $ pQuerySegment (P.try pRootQuery <|> P.try pCurrentQuery)
   return $ Query { queryType = Current, querySegments = segs }
 
 
-pQuerySegment :: P.Parser QuerySegment
-pQuerySegment = do
+pQuerySegment :: P.Parser a -> P.Parser (QuerySegment a)
+pQuerySegment pQ = do
   dotdot <- P.optionMaybe (P.try $ P.string "..")
-  seg <- pSegment $ isNothing dotdot
+  seg <- pSegment pQ $ isNothing dotdot
   let segType = if isNothing dotdot then Child else Descendant
   return $ QuerySegment { segmentType = segType, segment = seg }
 
-pSegment :: Bool -> P.Parser Segment
-pSegment isChild = P.try pBracketed
-                <|> P.try (pDotted isChild)
-                <|> P.try (pWildcardSeg isChild)
+pSegment :: P.Parser a -> Bool -> P.Parser (Segment a)
+pSegment pQ isChild
+        = P.try (pBracketed pQ)
+       <|> P.try (pDotted isChild)
+       <|> P.try (pWildcardSeg isChild)
 
-
-pBracketed :: P.Parser Segment
-pBracketed = do
+pBracketed :: P.Parser a -> P.Parser (Segment a)
+pBracketed pQ = do
   P.char '['
   pSpaces
-  sel <- pSelector
-  optionalSels <- P.many pCommaSepSelectors
+  sel <- pSelector pQ
+  optionalSels <- P.many $ pCommaSepSelectors pQ
   pSpaces
   P.char ']'
   return $ Bracketed (sel:optionalSels)
     where
-      pCommaSepSelectors :: P.Parser Selector
-      pCommaSepSelectors = P.try $ pSpaces *> P.char ',' *> pSpaces *> pSelector
+      pCommaSepSelectors :: P.Parser a -> P.Parser (Selector a)
+      pCommaSepSelectors p = P.try $ pSpaces *> P.char ',' *> pSpaces *> pSelector p
 
 
-pDotted :: Bool -> P.Parser Segment
+pDotted :: Bool -> P.Parser (Segment a)
 pDotted isChild = do
   (if isChild then P.string "." else P.string "")
   P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
@@ -80,23 +80,23 @@ pDotted isChild = do
   return $ Dotted key
 
 
-pWildcardSeg :: Bool -> P.Parser Segment
+pWildcardSeg :: Bool -> P.Parser (Segment a)
 pWildcardSeg isChild = (if isChild then P.string "." else P.string "") *> P.char '*' $> WildcardSegment
   
-pSelector :: P.Parser Selector
-pSelector = P.try pName
-         <|> P.try pSlice 
-         <|> P.try pIndex
-         <|> P.try pWildcardSel
-         <|> P.try pFilter
+pSelector :: P.Parser a -> P.Parser (Selector a)
+pSelector pQ = P.try pName
+                   <|> P.try pSlice 
+                   <|> P.try pIndex
+                   <|> P.try pWildcardSel
+                   <|> P.try (pFilter pQ)
 
-pName :: P.Parser Selector
+pName :: P.Parser (Selector a)
 pName = Name . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
 
-pIndex :: P.Parser Selector
+pIndex :: P.Parser (Selector a)
 pIndex = Index <$> pSignedInt
 
-pSlice :: P.Parser Selector
+pSlice :: P.Parser (Selector a)
 pSlice = do
   start <- P.optionMaybe (pSignedInt <* pSpaces)
   P.char ':'
@@ -108,59 +108,60 @@ pSlice = do
     _ -> 1)
 
 
-pWildcardSel :: P.Parser Selector
+pWildcardSel :: P.Parser (Selector a)
 pWildcardSel = P.char '*' $> WildcardSelector
 
 
-pFilter :: P.Parser Selector
-pFilter = do
+pFilter :: P.Parser a -> P.Parser (Selector a)
+pFilter pQ = do
   P.char '?'
   pSpaces
-  Filter <$> pLogicalOrExpr
+  Filter <$> pLogicalOrExpr pQ
 
 
-pLogicalOrExpr :: P.Parser LogicalOrExpr
-pLogicalOrExpr = do
-  expr <- pLogicalAndExpr
-  optionalExprs <- P.many pOrSepLogicalAndExprs
+pLogicalOrExpr :: P.Parser a -> P.Parser (LogicalOrExpr a)
+pLogicalOrExpr pQ = do
+  expr <- pLogicalAndExpr pQ
+  optionalExprs <- P.many $ pOrSepLogicalAndExprs pQ
   return $ LogicalOr (expr:optionalExprs)
     where
-      pOrSepLogicalAndExprs :: P.Parser LogicalAndExpr
-      pOrSepLogicalAndExprs = P.try $ pSpaces *> P.string "||" *> pSpaces *> pLogicalAndExpr
+      pOrSepLogicalAndExprs :: P.Parser a -> P.Parser (LogicalAndExpr a)
+      pOrSepLogicalAndExprs pQ' = P.try $ pSpaces *> P.string "||" *> pSpaces *> pLogicalAndExpr pQ'
 
-pLogicalAndExpr :: P.Parser LogicalAndExpr
-pLogicalAndExpr = do
-  expr <- pBasicExpr
-  optionalExprs <- P.many pAndSepBasicExprs
+pLogicalAndExpr :: P.Parser a -> P.Parser (LogicalAndExpr a)
+pLogicalAndExpr pQ = do
+  expr <- pBasicExpr pQ
+  optionalExprs <- P.many $ pAndSepBasicExprs pQ
   return $ LogicalAnd (expr:optionalExprs)
     where
-      pAndSepBasicExprs :: P.Parser BasicExpr
-      pAndSepBasicExprs = P.try $ pSpaces *> P.string "&&" *> pSpaces *> pBasicExpr
+      pAndSepBasicExprs :: P.Parser a -> P.Parser (BasicExpr a)
+      pAndSepBasicExprs pQ' = P.try $ pSpaces *> P.string "&&" *> pSpaces *> pBasicExpr pQ'
 
-pBasicExpr :: P.Parser BasicExpr
-pBasicExpr = P.try pParenExpr
-          <|> P.try pComparisonExpr
-          <|> P.try pTestExpr
+pBasicExpr :: P.Parser a -> P.Parser (BasicExpr a)
+pBasicExpr pQ 
+  = P.try (pParenExpr pQ)
+ <|> P.try pComparisonExpr
+ <|> P.try (pTestExpr pQ)
 
-pParenExpr :: P.Parser BasicExpr
-pParenExpr = do
+pParenExpr :: P.Parser a -> P.Parser (BasicExpr a)
+pParenExpr pQ = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
   P.char '('
   pSpaces
-  expr <- pLogicalOrExpr
+  expr <- pLogicalOrExpr pQ
   pSpaces
   P.char ')'
   let parenExp = if isNothing notOp then Paren expr else NotParen expr
   return parenExp
 
-pTestExpr :: P.Parser BasicExpr
-pTestExpr = do
+pTestExpr :: P.Parser a -> P.Parser (BasicExpr a)
+pTestExpr pQ = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
-  q <- P.try pRootQuery <|> P.try pCurrentQuery
+  q <- pQ
   let testExp = if isNothing notOp then Test q else NotTest q
   return testExp
 
-pComparisonExpr :: P.Parser BasicExpr
+pComparisonExpr :: P.Parser (BasicExpr a)
 pComparisonExpr = do
   leftC <- pComparable
   pSpaces
@@ -170,11 +171,11 @@ pComparisonExpr = do
 
 pComparisonOp :: P.Parser ComparisonOp
 pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
-                <|> P.try (P.string "<=" $> LessOrEqual)
-                <|> P.try (P.char '>' $> Greater)
-                <|> P.try (P.char '<' $> Less)
-                <|> P.try (P.string "!=" $> NotEqual)
-                <|> P.try (P.string "==" $> Equal)
+             <|> P.try (P.string "<=" $> LessOrEqual)
+             <|> P.try (P.char '>' $> Greater)
+             <|> P.try (P.char '<' $> Less)
+             <|> P.try (P.string "!=" $> NotEqual)
+             <|> P.try (P.string "==" $> Equal)
 
 pComparable :: P.Parser Comparable
 pComparable = P.try pCompLitString
