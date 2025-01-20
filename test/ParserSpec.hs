@@ -7,8 +7,9 @@ import qualified Text.ParserCombinators.Parsec as P
 import Data.Aeson.JSONPath.Parser       (pQuery)
 import Data.Either                      (isLeft)
 
-import Data.Aeson.JSONPath.Query.Types
+import Data.Aeson.JSONPath.Types
 import Test.Hspec
+
 import Prelude
 
 spec :: Spec
