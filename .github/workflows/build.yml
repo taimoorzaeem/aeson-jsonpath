@@ -63,5 +63,8 @@ jobs:
     - name: Build the project with resolver ${{ matrix.resolver }}
       run: stack build --resolver ${{ matrix.resolver }}
 
-    - name: Run tests with resolver ${{ matrix.resolver }}
-      run: stack test --resolver ${{ matrix.resolver }}
+    - name: Run spec tests with resolver ${{ matrix.resolver }}
+      run: stack test :spec --resolver ${{ matrix.resolver }}
+
+    - name: Run compliance tests with resolver ${{ matrix.resolver }}
+      run: stack test :compliance --resolver ${{ matrix.resolver }}
