@@ -19,7 +19,7 @@ import Data.Vector                (Vector)
 import Test.Hspec
 import Prelude
 
-data TestSuite = TestSuite
+newtype TestSuite = TestSuite
   { tests :: [TestCase]
   } deriving (Show)
 
@@ -62,7 +62,7 @@ spec TestSuite{tests} = do
 runTestCase :: TestCase -> SpecWith ()
 -- skip function extension tests
 runTestCase tc@TestCase{tags=Just xs, ..} =
-  if (elem "function" xs)
+  if "function" `elem` xs
     then xit name pending
   else
     runTestCase tc{tags=Nothing}
@@ -80,6 +80,6 @@ runTestCase TestCase{result=(Just r), document=(Just doc), ..} =
 -- if result is non-deterministic (any json from the list of results)
 runTestCase TestCase{results=(Just rs), document=(Just doc), ..} = do
   it name $
-    query selector doc `shouldSatisfy` (\x -> elem (fromRight V.empty x) rs)
+    query selector doc `shouldSatisfy` (\x -> fromRight V.empty x `elem` rs)
 
 runTestCase _ = pure ()
