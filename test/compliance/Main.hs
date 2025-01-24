@@ -29,7 +29,7 @@ readCtsFile filePath = do
 
 main :: IO ()
 main = do
-  file <- Paths.getDataFileName "test/compliance/cts.json"
+  file <- Paths.getDataFileName "jsonpath-compliance-test-suite/cts.json"
   cts <- readCtsFile file
   summary <- hspecWithResult defaultConfig 
     { configColorMode = ColorAuto
