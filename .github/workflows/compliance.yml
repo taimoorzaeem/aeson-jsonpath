@@ -1,10 +1,13 @@
-name: Build and Test
+name: Compliance
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    - cron: 0 0 * * *
 
 jobs:
   cabal:
@@ -31,7 +34,7 @@ jobs:
         restore-keys: |
           cabal-${{ matrix.ghc }}-
 
-    - name: Update Submodule
+    - name: Update Test Suite Submodule
       run: |
         git submodule update --init --recursive
         git submodule update --remote
@@ -39,11 +42,8 @@ jobs:
     - name: Update Cabal package list
       run: cabal v2-update --with-compiler=ghc-${{ matrix.ghc }}
  
-    - name: Build project
-      run: cabal v2-build --with-compiler=ghc-${{ matrix.ghc }}
-
-    - name: Run tests
-      run: cabal v2-test spec --with-compiler=ghc-${{ matrix.ghc }}
+    - name: Run complaince test suite
+      run: cabal v2-test compliance --with-compiler=ghc-${{ matrix.ghc }}
 
   stack:
     strategy:
@@ -65,7 +65,7 @@ jobs:
         restore-keys: |
             stack-${{ matrix.resolver }}-
 
-    - name: Update Submodule
+    - name: Update Test Suite Submodule
       run: |
         git submodule update --init --recursive
         git submodule update --remote
@@ -73,8 +73,5 @@ jobs:
     - name: Install dependencies for resolver ${{ matrix.resolver }}
       run: stack setup --resolver ${{ matrix.resolver }}
 
-    - name: Build the project with resolver ${{ matrix.resolver }}
-      run: stack build --resolver ${{ matrix.resolver }}
-
-    - name: Run spec tests with resolver ${{ matrix.resolver }}
-      run: stack test :spec --resolver ${{ matrix.resolver }}
+    - name: Run compliance tests with resolver ${{ matrix.resolver }}
+      run: stack test :compliance --resolver ${{ matrix.resolver }}
