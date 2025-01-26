@@ -35,6 +35,11 @@ library
   hs-source-dirs:     src
   exposed-modules:    Data.Aeson.JSONPath
                       Data.Aeson.JSONPath.Parser
+                      Data.Aeson.JSONPath.Parser.Query
+                      Data.Aeson.JSONPath.Parser.Filter
+                      Data.Aeson.JSONPath.Parser.Name
+                      Data.Aeson.JSONPath.Parser.Number
+                      Data.Aeson.JSONPath.Parser.Common
                       Data.Aeson.JSONPath.Query
                       Data.Aeson.JSONPath.Query.Query
                       Data.Aeson.JSONPath.Query.Segment
