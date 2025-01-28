@@ -61,6 +61,7 @@ spec TestSuite{tests} = do
 
 runTestCase :: TestCase -> SpecWith ()
 -- skip function extension tests
+-- Length function is implemented but no tested against the Comp Test Suite
 runTestCase tc@TestCase{tags=Just xs, ..} =
   if "function" `elem` xs
     then xit name pending
