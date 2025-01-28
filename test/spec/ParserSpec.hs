@@ -261,7 +261,7 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "category"]
-            }) Equal (CompLitString "reference"))]])]
+            }) Equal (CompLit (LitString "reference")))]])]
           }]
         }
 
@@ -298,10 +298,10 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Less (CompLitNum 20.0)), Comparison (Comp (CompSQ SingularQuery {
+            }) Less (CompLit (LitNum 20.0))), Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Greater (CompLitNum 10.0))]])]
+            }) Greater (CompLit (LitNum 10.0)))]])]
           }]
         }
 
@@ -315,10 +315,10 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Less (CompLitNum 20.0))], LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
+            }) Less (CompLit (LitNum 20.0)))], LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Greater (CompLitNum 10.0))]])]
+            }) Greater (CompLit (LitNum 10.0)))]])]
           }]
         }
 
@@ -355,10 +355,10 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [NotParen (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            })  Less (CompLitNum 20.0)), Comparison (Comp (CompSQ SingularQuery {
+            })  Less (CompLit (LitNum 20.0))), Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Greater (CompLitNum 10.0))]])]])]
+            }) Greater (CompLit (LitNum 10.0)))]])]])]
           }]
         }
 
@@ -378,7 +378,7 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Less (CompLitNum (-1.0e20)))]])]
+            }) Less (CompLit (LitNum (-1.0e20))))]])]
           }]
         }
 
@@ -398,7 +398,7 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "price"]
-            }) Less (CompLitNum (1.0e-2)))]])]
+            }) Less (CompLit (LitNum (1.0e-2))))]])]
           }]
         }
 
@@ -418,7 +418,7 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "is_available"]
-            }) Equal (CompLitBool True))]])]
+            }) Equal (CompLit (LitBool True)))]])]
           }]
         }
 
@@ -438,6 +438,6 @@ spec = do
             segment = Bracketed [Filter (LogicalOr [LogicalAnd [Comparison (Comp (CompSQ SingularQuery {
               singularQueryType = CurrentSQ,
               singularQuerySegments = [NameSQSeg "is_available"]
-            }) Equal CompLitNull)]])]
+            }) Equal (CompLit LitNull))]])]
           }]
         }
