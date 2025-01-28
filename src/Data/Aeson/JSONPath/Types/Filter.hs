@@ -15,6 +15,7 @@ module Data.Aeson.JSONPath.Types.Filter
   , ComparisonExpr (..)
   , ComparisonOp (..)
   , Comparable (..)
+  , Literal (..)
   , SingularQueryType (..)
   , SingularQuery (..)
   , SingularQuerySegment (..)
@@ -64,11 +65,16 @@ data ComparisonOp
 
 -- |
 data Comparable
-  = CompLitString Text
-  | CompLitNum Scientific
-  | CompLitBool Bool
-  | CompLitNull
+  = CompLit Literal
   | CompSQ SingularQuery
+  deriving (Eq, Show, Lift)
+
+-- |
+data Literal
+  = LitString Text
+  | LitNum Scientific
+  | LitBool Bool
+  | LitNull
   deriving (Eq, Show, Lift)
 
 -- |

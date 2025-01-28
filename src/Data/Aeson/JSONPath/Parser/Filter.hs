@@ -94,26 +94,29 @@ pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
              <|> P.try (P.string "==" $> Equal)
 
 pComparable :: P.Parser Comparable
-pComparable = P.try pCompLitString
-              <|> P.try pCompLitNum
-              <|> P.try pCompLitBool
-              <|> P.try pCompLitNull
-              <|> P.try pCompSQ
+pComparable = P.try pCompLit <|> P.try pCompSQ
 
-pCompLitString :: P.Parser Comparable
-pCompLitString = CompLitString . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
+pCompLit :: P.Parser Comparable
+pCompLit = CompLit
+            <$> (P.try pLitString
+            <|> P.try pLitNum
+            <|> P.try pLitBool
+            <|> P.try pLitNull)
 
-pCompLitNum :: P.Parser Comparable
-pCompLitNum = CompLitNum 
+pLitString :: P.Parser Literal
+pLitString = LitString . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
+
+pLitNum :: P.Parser Literal
+pLitNum = LitNum 
            <$> (P.try (P.string "-0" $> (0 :: Scientific)) -- edge case
            <|> P.try pDoubleScientific 
            <|> P.try pScientific)
 
-pCompLitBool :: P.Parser Comparable
-pCompLitBool = CompLitBool <$> (P.try (P.string "true" $> True) <|> P.try (P.string "false" $> False))
+pLitBool :: P.Parser Literal
+pLitBool = LitBool <$> (P.try (P.string "true" $> True) <|> P.try (P.string "false" $> False))
 
-pCompLitNull :: P.Parser Comparable
-pCompLitNull = P.string "null" $> CompLitNull
+pLitNull :: P.Parser Literal
+pLitNull = P.string "null" $> LitNull
 
 pCompSQ :: P.Parser Comparable
 pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ)

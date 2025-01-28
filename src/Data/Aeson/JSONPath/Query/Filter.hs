@@ -79,10 +79,13 @@ compareVals NotEqual       o1 o2 = o1 /= o2
 
 
 getComparableVal :: Comparable -> QueryState -> Maybe Value
-getComparableVal (CompLitNum num) _ = Just $ JSON.Number num
-getComparableVal (CompLitString txt) _ = Just $ JSON.String txt
-getComparableVal (CompLitBool bool) _ = Just $ JSON.Bool bool
-getComparableVal CompLitNull _ = Just JSON.Null
+getComparableVal (CompLit lit) _ = 
+  case lit of
+    LitString txt -> Just $ JSON.String txt
+    LitNum num    -> Just $ JSON.Number num
+    LitBool bool  -> Just $ JSON.Bool bool
+    LitNull       -> Just JSON.Null
+
 getComparableVal (CompSQ SingularQuery{..}) QueryState{..} = case singularQueryType of
   RootSQ -> traverseSingularQSegs (Just rootVal) singularQuerySegments
   CurrentSQ -> traverseSingularQSegs (Just curVal) singularQuerySegments
