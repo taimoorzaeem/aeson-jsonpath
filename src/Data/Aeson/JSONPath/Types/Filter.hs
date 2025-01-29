@@ -12,6 +12,7 @@ module Data.Aeson.JSONPath.Types.Filter
   (LogicalOrExpr (..)
   , LogicalAndExpr (..)
   , BasicExpr (..)
+  , TestExpr (..)
   , ComparisonExpr (..)
   , ComparisonOp (..)
   , Comparable (..)
@@ -43,9 +44,14 @@ newtype LogicalAndExpr a
 data BasicExpr a
   = Paren (LogicalOrExpr a) -- ( expr )
   | NotParen (LogicalOrExpr a) -- not (expr)
-  | Test a -- query
-  | NotTest a -- not query
+  | Test (TestExpr a) -- query
+  | NotTest (TestExpr a) -- not query
   | Comparison ComparisonExpr
+  deriving (Eq, Show, Lift)
+
+-- |
+newtype TestExpr a
+  = FilterQuery a
   deriving (Eq, Show, Lift)
 
 -- |

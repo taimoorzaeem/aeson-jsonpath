@@ -58,8 +58,8 @@ evaluateBasicExpr (NotTest expr)    qS = not $ evaluateTestExpr expr qS
 evaluateBasicExpr (Comparison expr) qS = evaluateCompExpr expr qS
 
 
-evaluateTestExpr :: Query -> QueryState -> Bool
-evaluateTestExpr expr qS@QueryState{..} = not $ null $ executeQuery expr qS
+evaluateTestExpr :: TestExpr Query -> QueryState -> Bool
+evaluateTestExpr (FilterQuery expr) qS@QueryState{..} = not $ null $ executeQuery expr qS
 
 
 evaluateCompExpr :: ComparisonExpr -> QueryState -> Bool
