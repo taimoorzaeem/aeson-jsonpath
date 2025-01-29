@@ -275,13 +275,13 @@ spec = do
             segment = Dotted "books"
           }, QuerySegment {
             segmentType = Child,
-            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Test Query {
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Test (FilterQuery Query {
               queryType = Current,
               querySegments = [QuerySegment {
                 segmentType = Child,
                 segment = Dotted "price"
               }]
-            }]])]
+            })]])]
           }, QuerySegment {
             segmentType = Child,
             segment = Dotted "title"
@@ -332,13 +332,13 @@ spec = do
             segment = Dotted "books"
           }, QuerySegment {
             segmentType = Child,
-            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Test Query {
+            segment = Bracketed [Filter (LogicalOr [LogicalAnd [Test (FilterQuery Query {
               queryType = Root,
               querySegments = [QuerySegment {
                 segmentType = Child,
                 segment = Dotted "price"
               }]
-            }]])]
+            })]])]
           }, QuerySegment {
             segmentType = Child,
             segment = Dotted "title"

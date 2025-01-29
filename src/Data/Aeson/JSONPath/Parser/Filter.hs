@@ -73,7 +73,7 @@ pParenExpr pQ = do
 pTestExpr :: P.Parser a -> P.Parser (BasicExpr a)
 pTestExpr pQ = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
-  q <- pQ
+  q <- P.try (FilterQuery <$> pQ)
   let testExp = if isNothing notOp then Test q else NotTest q
   return testExp
 
