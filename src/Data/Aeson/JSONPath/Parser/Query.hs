@@ -31,14 +31,20 @@ import Prelude
 pRootQuery :: P.Parser Query
 pRootQuery = do
   P.char '$'
-  segs <- P.many (pSpaces *> pQuerySegment (P.try pRootQuery <|> P.try pCurrentQuery))
+  segs <- P.many $ P.try pSpacedOutSegments
   return $ Query { queryType = Root, querySegments = segs }
+    where
+      pQ = P.try pRootQuery <|> P.try pCurrentQuery
+      pSpacedOutSegments = pSpaces *> pQuerySegment pQ
 
 pCurrentQuery :: P.Parser Query
 pCurrentQuery = do
   P.char '@'
-  segs <- P.many $ pQuerySegment (P.try pRootQuery <|> P.try pCurrentQuery)
+  segs <- P.many $ P.try pSpacedOutSegments
   return $ Query { queryType = Current, querySegments = segs }
+    where
+      pQ = P.try pRootQuery <|> P.try pCurrentQuery
+      pSpacedOutSegments = pSpaces *> pQuerySegment pQ
 
 
 pQuerySegment :: P.Parser a -> P.Parser (QuerySegment a)
