@@ -339,6 +339,10 @@ spec = do
       queryQQ [jsonPath|$.store.books[?@.author]|] rootDoc
       `shouldBe` getVector booksDoc
 
+    it "returns with filtering with spaced out segments: test expression" $
+      queryQQ [jsonPath|$  .store  .books[?@  .author]|] rootDoc
+      `shouldBe` getVector booksDoc
+
     it "returns with filtering: test expr gives empty with non-existent key" $
       queryQQ [jsonPath|$.store.books[?@.not_here]|] rootDoc
       `shouldBe` V.empty

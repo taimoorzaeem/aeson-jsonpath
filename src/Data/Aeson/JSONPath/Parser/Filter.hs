@@ -124,13 +124,13 @@ pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ)
 pCurrentSingleQ :: P.Parser SingularQuery
 pCurrentSingleQ = do
   P.char '@'
-  segs <- P.many pSingularQuerySegment
+  segs <- P.many $ P.try (pSpaces *> pSingularQuerySegment)
   return $ SingularQuery { singularQueryType = CurrentSQ, singularQuerySegments = segs }
 
 pRootSingleQ :: P.Parser SingularQuery
 pRootSingleQ = do
   P.char '$'
-  segs <- P.many pSingularQuerySegment
+  segs <- P.many $ P.try (pSpaces *> pSingularQuerySegment)
   return $ SingularQuery { singularQueryType = RootSQ, singularQuerySegments = segs }
 
 pSingularQuerySegment :: P.Parser SingularQuerySegment
