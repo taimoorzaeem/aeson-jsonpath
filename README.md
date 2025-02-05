@@ -15,9 +15,10 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
 - [x] Segments
   - [x] Child Segment
   - [x] Descendant Segment
-- [x] Node Locations (Normalized Path)
+- [x] Normalized Paths
 - [ ] Function Extensions
-- [ ] Setting Values (Non-RFC)
+
+I have decided not to implement Function Extension yet. Please open an issue or discussion if you'd like to see them implemented.
 
 ## Quick Start
 
@@ -56,7 +57,7 @@ json = [aesonQQ| {
         "year": 2018
       },
       {
-        "title": "Lawrence Anyways",
+        "title": "Laurence Anyways",
         "director": "Xavier Dolan",
         "year": 2012
       }
@@ -111,7 +112,7 @@ ghci> query "$.shop.movies[?@.year < 2015]" json
 Right [
   Object (fromList [
     ("director",String "Xavier Dolan"),
-    ("title",String "Lawrence Anyways"),
+    ("title",String "Laurence Anyways"),
     ("year",Number 2012.0)
   ])
 ]
