@@ -56,7 +56,7 @@ pLogicalAndExpr pQ = do
 pBasicExpr :: P.Parser a -> P.Parser (BasicExpr a)
 pBasicExpr pQ 
   = P.try (pParenExpr pQ)
- <|> P.try (pComparisonExpr pQ)
+ <|> P.try pComparisonExpr
  <|> P.try (pTestExpr pQ)
 
 pParenExpr :: P.Parser a -> P.Parser (BasicExpr a)
@@ -73,17 +73,17 @@ pParenExpr pQ = do
 pTestExpr :: P.Parser a -> P.Parser (BasicExpr a)
 pTestExpr pQ = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
-  q <- P.try (FilterQuery <$> pQ) <|> P.try (TestFunc <$> pFunctionExpr pQ)
+  q <- P.try (FilterQuery <$> pQ)
   let testExp = if isNothing notOp then Test q else NotTest q
   return testExp
 
-pComparisonExpr :: P.Parser a -> P.Parser (BasicExpr a)
-pComparisonExpr pQ = do
-  leftC <- pComparable pQ
+pComparisonExpr :: P.Parser (BasicExpr a)
+pComparisonExpr = do
+  leftC <- pComparable
   pSpaces
   compOp <- pComparisonOp
   pSpaces
-  Comparison . Comp leftC compOp <$> pComparable pQ
+  Comparison . Comp leftC compOp <$> pComparable
 
 pComparisonOp :: P.Parser ComparisonOp
 pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
@@ -93,16 +93,15 @@ pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
              <|> P.try (P.string "!=" $> NotEqual)
              <|> P.try (P.string "==" $> Equal)
 
-pComparable :: P.Parser a -> P.Parser (Comparable a)
-pComparable pQ = P.try (CompLit <$> pLiteral)
-              <|> P.try pCompSQ
-              <|> P.try (CompFunc <$> pFunctionExpr pQ)
+pComparable :: P.Parser Comparable
+pComparable = P.try pCompLit <|> P.try pCompSQ
 
-pLiteral :: P.Parser Literal
-pLiteral = P.try pLitString
-        <|> P.try pLitNum
-        <|> P.try pLitBool
-        <|> P.try pLitNull
+pCompLit :: P.Parser Comparable
+pCompLit = CompLit
+            <$> (P.try pLitString
+            <|> P.try pLitNum
+            <|> P.try pLitBool
+            <|> P.try pLitNull)
 
 pLitString :: P.Parser Literal
 pLitString = LitString . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
@@ -119,7 +118,7 @@ pLitBool = LitBool <$> (P.try (P.string "true" $> True) <|> P.try (P.string "fal
 pLitNull :: P.Parser Literal
 pLitNull = P.string "null" $> LitNull
 
-pCompSQ :: P.Parser (Comparable a)
+pCompSQ :: P.Parser Comparable
 pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ)
 
 pCurrentSingleQ :: P.Parser SingularQuery
@@ -158,24 +157,3 @@ pSingularQIndexSeg = do
   idx <- pSignedInt
   P.char ']'
   return $ IndexSQSeg idx
-
-
-pFunctionExpr :: P.Parser a -> P.Parser (FunctionExpr a)
-pFunctionExpr pQ = do
-  funcName <- P.try (P.string "length" $> Length)
-  P.char '('
-  arg <- pSpaces *> pFunctionArg pQ
-  otherArgs <- P.many $ pSpaceSepArguments pQ
-  pSpaces
-  P.char ')'
-  return $ FunctionExpr funcName (arg:otherArgs)
-    where
-      pSpaceSepArguments :: P.Parser a -> P.Parser (FunctionArg a)
-      pSpaceSepArguments pQ' = P.try $ pSpaces *> P.char ',' *> pSpaces *> pFunctionArg pQ'
-
-
-pFunctionArg :: P.Parser a -> P.Parser (FunctionArg a)
-pFunctionArg pQ = P.try (ArgLit <$> pLiteral)
-               <|> P.try (ArgQuery <$> pQ)
-               <|> P.try (ArgLogicExpr <$> pLogicalOrExpr pQ)
-               <|> P.try (ArgFuncExpr <$> pFunctionExpr pQ)

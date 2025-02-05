@@ -17,13 +17,10 @@ module Data.Aeson.JSONPath.Query.Filter
 
 import Data.Aeson                      (Value)
 import Data.Vector                     (Vector)
-import Data.Scientific                 (Scientific)
-import GHC.Num                         (integerFromInt)
 
 import qualified Data.Aeson            as JSON
 import qualified Data.Aeson.KeyMap     as KM
 import qualified Data.Aeson.Key        as K
-import qualified Data.Text             as T
 import qualified Data.Vector           as V
 
 import Data.Aeson.JSONPath.Types
@@ -63,15 +60,9 @@ evaluateBasicExpr (Comparison expr) qS = evaluateCompExpr expr qS
 
 evaluateTestExpr :: TestExpr Query -> QueryState -> Bool
 evaluateTestExpr (FilterQuery expr) qS@QueryState{..} = not $ null $ executeQuery expr qS
--- https://www.rfc-editor.org/rfc/rfc9535#type-conv
-evaluateTestExpr (TestFunc funcExpr) qS =
-  case evaluateFunctionExpr funcExpr qS of
-    NodesType res -> not $ null res
-    LogicalType b -> b
-    ValueType _   -> False
 
 
-evaluateCompExpr :: ComparisonExpr Query -> QueryState -> Bool
+evaluateCompExpr :: ComparisonExpr -> QueryState -> Bool
 evaluateCompExpr (Comp leftC op rightC) qS  = compareVals op (getComparableVal leftC qS) (getComparableVal rightC qS)
 
 
@@ -87,7 +78,7 @@ compareVals Equal          o1 o2 = o1 == o2
 compareVals NotEqual       o1 o2 = o1 /= o2
 
 
-getComparableVal :: Comparable Query -> QueryState -> Maybe Value
+getComparableVal :: Comparable -> QueryState -> Maybe Value
 getComparableVal (CompLit lit) _ = 
   case lit of
     LitString txt -> Just $ JSON.String txt
@@ -99,10 +90,6 @@ getComparableVal (CompSQ SingularQuery{..}) QueryState{..} = case singularQueryT
   RootSQ -> traverseSingularQSegs (Just rootVal) singularQuerySegments
   CurrentSQ -> traverseSingularQSegs (Just curVal) singularQuerySegments
 
-getComparableVal (CompFunc funcExpr) qS = case evaluateFunctionExpr funcExpr qS of
-    ValueType val -> val
-    _             -> Nothing
-
 
 traverseSingularQSegs :: Maybe Value -> [SingularQuerySegment] -> Maybe Value
 traverseSingularQSegs = foldl lookupSingleQSeg
@@ -112,38 +99,3 @@ lookupSingleQSeg :: Maybe Value -> SingularQuerySegment -> Maybe Value
 lookupSingleQSeg (Just (JSON.Object obj)) (NameSQSeg txt) = KM.lookup (K.fromText txt) obj
 lookupSingleQSeg (Just (JSON.Array arr)) (IndexSQSeg idx) = (V.!?) arr idx
 lookupSingleQSeg _ _ = Nothing
-
-
-evaluateFunctionExpr :: FunctionExpr Query -> QueryState -> FunctionResult
-evaluateFunctionExpr FunctionExpr{..} qS =
-  case functionName of
-    Length -> evaluateLengthFunction functionArgs qS
-
--- TODO: find a better way to enforce argument types (remove underscores)
--- Length Function
--- ===============
--- Argument: ValueType
--- Result:   ValueType
-
--- We can convert a Singleton Vector to ValueType result
--- Multiple vector result mean NodesType result
-
-evaluateLengthFunction :: [FunctionArg Query] -> QueryState -> FunctionResult
-evaluateLengthFunction [ArgLit (LitString txt)] _ = ValueType $ Just $ intToJSONNumber (T.length txt)
-
-evaluateLengthFunction [ArgQuery q] qS@QueryState{..} =
-  if V.length (executeQuery q qS) /= 1
-    then ValueType Nothing
-  else
-    case V.head (executeQuery q qS) of
-      JSON.String txt -> ValueType $ Just $ intToJSONNumber (T.length txt)
-      JSON.Array arr  -> ValueType $ Just $ intToJSONNumber (V.length arr)
-      JSON.Object obj -> ValueType $ Just $ intToJSONNumber (KM.size obj)
-      _               -> ValueType Nothing
-
-evaluateLengthFunction [ArgFuncExpr funcExpr] qS = evaluateFunctionExpr funcExpr qS
--- No need to check logicalOrExpr since it only accepts a valueType argument
-evaluateLengthFunction _ _ = ValueType Nothing
-
-intToJSONNumber :: Int -> Value
-intToJSONNumber int = JSON.Number ((fromIntegral $ integerFromInt int) :: Scientific)

@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveLift   #-}
+{-# LANGUAGE DeriveLift #-}
 {- |
 Module      : Data.Aeson.JSONPath.Types.Filter
 Description : 
@@ -20,17 +20,12 @@ module Data.Aeson.JSONPath.Types.Filter
   , SingularQueryType (..)
   , SingularQuery (..)
   , SingularQuerySegment (..)
-  , FunctionExpr (..)
-  , FunctionName (..)
-  , FunctionArg (..)
-  , FunctionResult (..)
   )
   where
 
-import Data.Aeson                  (Value)
 import Data.Text                   (Text)
 import Data.Scientific             (Scientific)
-import Data.Vector                 (Vector)
+
 import Language.Haskell.TH.Syntax  (Lift)
 
 import Prelude
@@ -51,18 +46,17 @@ data BasicExpr a
   | NotParen (LogicalOrExpr a) -- not (expr)
   | Test (TestExpr a) -- query
   | NotTest (TestExpr a) -- not query
-  | Comparison (ComparisonExpr a)
+  | Comparison ComparisonExpr
   deriving (Eq, Show, Lift)
 
 -- |
-data TestExpr a
+newtype TestExpr a
   = FilterQuery a
-  | TestFunc (FunctionExpr a)
   deriving (Eq, Show, Lift)
 
 -- |
-data ComparisonExpr a
-  = Comp (Comparable a) ComparisonOp (Comparable a)
+data ComparisonExpr
+  = Comp Comparable ComparisonOp Comparable
   deriving (Eq, Show, Lift)
 
 -- |
@@ -76,10 +70,9 @@ data ComparisonOp
   deriving (Eq, Show, Lift)
 
 -- |
-data Comparable a
+data Comparable
   = CompLit Literal
   | CompSQ SingularQuery
-  | CompFunc (FunctionExpr a) -- Value Type
   deriving (Eq, Show, Lift)
 
 -- |
@@ -105,36 +98,3 @@ data SingularQuerySegment
   = NameSQSeg Text
   | IndexSQSeg Int
   deriving (Eq, Show, Lift)
-
--- Function Extensions
-
--- |
-data FunctionExpr a = FunctionExpr
-  { functionName :: FunctionName
-  , functionArgs :: [FunctionArg a]
-  }
-  deriving (Eq, Show, Lift)
-
--- |
-data FunctionName
-  = Length -- only have length function for now
-  -- Count
-  -- Match
-  -- Search
-  -- Value
-  deriving (Eq, Show, Lift)
-
--- |
-data FunctionArg a
-  = ArgLit Literal
-  | ArgQuery a
-  | ArgLogicExpr (LogicalOrExpr a)
-  | ArgFuncExpr (FunctionExpr a)
-  deriving (Eq, Show, Lift)
-
--- |
-data FunctionResult
-  = NodesType (Vector Value)
-  | LogicalType Bool
-  | ValueType (Maybe Value)
-  deriving Eq
