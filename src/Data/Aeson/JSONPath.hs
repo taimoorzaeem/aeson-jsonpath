@@ -6,6 +6,8 @@ License     : MIT
 Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
 Stability   : Experimental
 Portability : Portable
+
+Run JSONPath queries on Aeson Values using methods exported in this module.
 -}
 module Data.Aeson.JSONPath
   (
