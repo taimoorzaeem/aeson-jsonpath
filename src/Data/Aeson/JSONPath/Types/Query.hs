@@ -1,13 +1,4 @@
 {-# LANGUAGE DeriveLift #-}
-{- |
-Module      : Data.Aeson.JSONPath.Types.Query
-Description : TODO:
-Copyright   : (c) 2024-2025 Taimoor Zaeem
-License     : MIT
-Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
-Stability   : Experimental
-Portability : Portable
--}
 module Data.Aeson.JSONPath.Types.Query
   ( Query (..)
   , QueryType (..)

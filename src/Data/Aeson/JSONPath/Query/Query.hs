@@ -1,15 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
-{- |
-Module      : Data.Aeson.JSONPath.Query.Query
-Description : 
-Copyright   : (c) 2024-2025 Taimoor Zaeem
-License     : MIT
-Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
-Stability   : Experimental
-Portability : Portable
-
-This module contains core functions that runs the query on 'Value'.
--}
 module Data.Aeson.JSONPath.Query.Query
   ( qQuery
   , qQueryLocated
@@ -27,6 +16,7 @@ import Data.Aeson.JSONPath.Query.Segment
 
 import Prelude
 
+-- | Runs the JSONPath Query
 qQuery :: Query -> QueryState -> Vector Value
 qQuery Query{..} qS@QueryState{..} = case queryType of
   Root    -> foldl applySegment (V.singleton rootVal) querySegments
@@ -35,6 +25,7 @@ qQuery Query{..} qS@QueryState{..} = case queryType of
     applySegment :: Vector Value -> QuerySegment Query -> Vector Value
     applySegment vec seg = join $ V.map (\x -> qQuerySegment seg qS{ curVal = x }) vec
 
+-- | Runs the JSONPath Query also returning node locations
 qQueryLocated :: Query -> QueryState -> String -> Vector (String,Value)
 qQueryLocated Query{..} qS@QueryState{..} loc = case queryType of
   Root    -> foldl applySegment (V.singleton (loc,rootVal)) querySegments

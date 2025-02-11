@@ -1,15 +1,4 @@
 {-# LANGUAGE RecordWildCards #-}
-{- |
-Module      : Data.Aeson.JSONPath.Query.Filter
-Description : 
-Copyright   : (c) 2024-2025 Taimoor Zaeem
-License     : MIT
-Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
-Stability   : Experimental
-Portability : Portable
-
-This module contains core functions that runs the query on 'Value'.
--}
 module Data.Aeson.JSONPath.Query.Filter
   ( filterOrExpr
   , filterOrExprLocated )

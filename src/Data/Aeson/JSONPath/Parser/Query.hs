@@ -1,13 +1,4 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
-{- |
-Module      : Data.Aeson.JSONPath.Parser.Query
-Description :
-Copyright   : (c) 2024-2025 Taimoor Zaeem
-License     : MIT
-Maintainer  : Taimoor Zaeem <mtaimoorzaeem@gmail.com>
-Stability   : Experimental
-Portability : Portable
--}
 module Data.Aeson.JSONPath.Parser.Query
   ( pRootQuery
   , pCurrentQuery )
