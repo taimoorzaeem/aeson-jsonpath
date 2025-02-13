@@ -5,8 +5,9 @@ module Data.Aeson.JSONPath.Query.Selector
   )
   where
 
-import Data.Aeson                      (Value)
-import Data.Vector                     (Vector)
+import Data.Aeson     (Value)
+import Data.Vector    (Vector)
+import Data.Text      (Text)
 
 import qualified Data.Aeson            as JSON
 import qualified Data.Aeson.KeyMap     as KM
@@ -34,7 +35,7 @@ qSelector WildcardSelector QueryState{..} = case curVal of
 
 
 qSelectorLocated :: Selector Query -> QueryState -> String -> Vector (String,Value)
-qSelectorLocated (Name key) QueryState{curVal=(JSON.Object obj)} loc = maybe V.empty (\x-> V.singleton (loc ++ "['" ++ T.unpack key ++ "']", x)) $ KM.lookup (K.fromText key) obj
+qSelectorLocated (Name key) QueryState{curVal=(JSON.Object obj)} loc = maybe V.empty (\x-> V.singleton (toPathKey loc key, x)) $ KM.lookup (K.fromText key) obj
 qSelectorLocated (Name _) _ _ = V.empty
 qSelectorLocated (Index idx) QueryState{curVal=(JSON.Array arr)} loc = maybe V.empty (\x-> V.singleton (newLocation, x)) $ (V.!?) arr (getIndex idx)
   where
@@ -52,7 +53,7 @@ qSelectorLocated WildcardSelector QueryState{..} loc = case curVal of
     (JSON.Array arr)  -> V.zip (V.fromList (locsWithIdxs arr)) arr
     _                 -> V.empty
     where
-      locsWithKeys obj = map (\x -> loc ++ "['" ++ K.toString x ++ "']") (KM.keys obj)
+      locsWithKeys obj = map (toPathKey loc . K.toText) (KM.keys obj)
       locsWithIdxs arr = map (\x -> loc ++ "[" ++ show x ++ "]") [0..(V.length arr)]
 
 
@@ -118,3 +119,7 @@ sliceArrayLocated (start,end,step) vec =
               then loop (i+stp) $ V.snoc acc $ (V.!) arr (normalize i)
             else
               acc
+
+
+toPathKey :: String -> Text -> String
+toPathKey loc key = loc ++ "['" ++ T.unpack key ++ "']"
