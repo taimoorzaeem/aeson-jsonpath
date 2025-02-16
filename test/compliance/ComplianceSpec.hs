@@ -31,13 +31,15 @@ instance JSON.FromJSON TestSuite where
   parseJSON _ = mzero
 
 data TestCase = TestCase
-  { name       :: String
-  , selector   :: String
-  , document   :: Maybe Value
-  , result     :: Maybe (Vector Value)
-  , results    :: Maybe [Vector Value]
-  , invalidSel :: Maybe Bool
-  , tags       :: Maybe [String]
+  { name         :: String
+  , selector     :: String
+  , document     :: Maybe Value
+  , result       :: Maybe (Vector Value)
+  , results      :: Maybe [Vector Value]
+  , resultPaths  :: Maybe (Vector String)
+  , resultsPaths :: Maybe [Vector String]
+  , invalidSel   :: Maybe Bool
+  , tags         :: Maybe [String]
   } deriving (Show)
 
 instance JSON.FromJSON TestCase where
@@ -48,6 +50,8 @@ instance JSON.FromJSON TestCase where
     <*> o .:? "document"
     <*> o .:? "result"
     <*> o .:? "results"
+    <*> o .:? "result_paths"
+    <*> o .:? "results_paths"
     <*> o .:? "invalid_selector"
     <*> o .:? "tags"
 
@@ -73,13 +77,17 @@ runTestCase TestCase{invalidSel=(Just True), ..} =
     P.parse pQuery "" selector `shouldSatisfy` isLeft
 
 -- if result is deterministic (one json)
-runTestCase TestCase{result=(Just r), document=(Just doc), ..} =
-  it name $
+runTestCase TestCase{result=(Just r), {-resultPaths=(Just rp),-} document=(Just doc), ..} =
+  it name $ do
     query selector doc `shouldBe` Right r
+    -- queryLocated selector doc `shouldBe` Right (V.zip rp r)
 
 -- if result is non-deterministic (any json from the list of results)
-runTestCase TestCase{results=(Just rs), document=(Just doc), ..} = do
-  it name $
+runTestCase TestCase{results=(Just rs), {-resultsPaths=(Just rsp),-} document=(Just doc), ..} = do
+  it name $ do
     query selector doc `shouldSatisfy` (\x -> fromRight V.empty x `elem` rs)
+    -- queryLocated selector doc `shouldSatisfy` (\x -> fromRight V.empty x `elem` vecList)
+    where
+      -- vecList = [ V.zip rp r | rp <- rsp, r <- rs]
 
 runTestCase _ = pure ()
