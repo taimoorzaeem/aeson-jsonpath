@@ -11,6 +11,7 @@ import Data.Vector   (Vector)
 
 import qualified Data.Aeson         as JSON
 import qualified Data.Aeson.KeyMap  as KM
+import qualified Data.Aeson.Key     as K
 import qualified Data.Vector        as V
 
 import Data.Aeson.JSONPath.Types
@@ -58,10 +59,20 @@ allElemsRecursive _ = V.empty
 allElemsRecursiveLocated :: (String,Value) -> Vector (String,Value)
 allElemsRecursiveLocated (loc, o@(JSON.Object obj)) = V.concat [
     V.singleton (loc,o),
-    V.concat $ zipWith (curry allElemsRecursiveLocated) (replicate (length (KM.elems obj)) loc) (KM.elems obj)
+    V.concat $ zipWith (curry allElemsRecursiveLocated) keys (KM.elems obj)
   ]
+  where
+    keys = map (toPathKey loc) $ KM.keys obj
 allElemsRecursiveLocated (loc, a@(JSON.Array arr)) = V.concat [
     V.singleton (loc,a),
-    V.concat $ zipWith (curry allElemsRecursiveLocated) (replicate (V.length arr) loc) (V.toList arr)
+    V.concat $ zipWith (curry allElemsRecursiveLocated) indices (V.toList arr)
   ]
+  where
+    indices = map (toPathIdx loc) [0..V.length arr - 1]
 allElemsRecursiveLocated _ = V.empty
+
+toPathKey :: String -> KM.Key -> String
+toPathKey loc key = loc ++ "['" ++ K.toString key ++ "']"
+
+toPathIdx :: String -> Int -> String
+toPathIdx loc idx = loc ++ "[" ++ show idx ++ "]"

@@ -4,6 +4,7 @@ All notable changes to this package are documented in this file. This project ad
 
 ## Unreleased
 
+- #50, Fix wrong normalized path with descendant segment
 - #43, Fix spaces not allowed in relative query and singular query segments
 
 ## 0.3.0.1
