@@ -1,5 +1,5 @@
 name:               aeson-jsonpath
-version:            0.3.0.1
+version:            0.3.0.2
 synopsis:           Parse and run JSONPath queries on Aeson documents
 description:        RFC 9535 compliant JSONPath parsing and querying
                     package. JSONPath is similar to XPath for querying

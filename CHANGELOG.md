@@ -2,7 +2,7 @@
 
 All notable changes to this package are documented in this file. This project adheres to [Haskell PVP](https://pvp.haskell.org/) versioning.
 
-## Unreleased
+## 0.3.0.2
 
 - #43, Fix spaces not allowed in relative query and singular query segments
 - #50, Fix wrong normalized path with descendant segment
