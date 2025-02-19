@@ -72,7 +72,21 @@ allElemsRecursiveLocated (loc, a@(JSON.Array arr)) = V.concat [
 allElemsRecursiveLocated _ = V.empty
 
 toPathKey :: String -> KM.Key -> String
-toPathKey loc key = loc ++ "['" ++ K.toString key ++ "']"
+toPathKey loc key = loc ++ "['" ++ escapeEscapees (K.toString key) ++ "']"
+  where
+    escapeEscapees :: String -> String
+    escapeEscapees [] = []
+    escapeEscapees (x:xs) = checkChar x ++ escapeEscapees xs
+      where
+        -- TODO: Do we need to escape unicode chars?
+        checkChar '\\' = ['\\', '\\']
+        checkChar '\'' = ['\\', '\'']
+        checkChar '\b' = ['\\', 'b']
+        checkChar '\r' = ['\\', 'r']
+        checkChar '\t' = ['\\', 't']
+        checkChar '\f' = ['\\', 'f']
+        checkChar '\n' = ['\\', 'n']
+        checkChar c = [c]
 
 toPathIdx :: String -> Int -> String
 toPathIdx loc idx = loc ++ "[" ++ show idx ++ "]"
