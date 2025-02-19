@@ -11,7 +11,7 @@ import qualified Text.ParserCombinators.Parsec as P
 
 import Control.Monad              (mzero)
 import Data.Aeson                 ((.:),(.:?),Value)
-import Data.Aeson.JSONPath        (query)
+import Data.Aeson.JSONPath        (query, queryLocated)
 import Data.Aeson.JSONPath.Parser (pQuery)
 import Data.Either                (isLeft, fromRight)
 import Data.Vector                (Vector)
@@ -77,17 +77,17 @@ runTestCase TestCase{invalidSel=(Just True), ..} =
     P.parse pQuery "" selector `shouldSatisfy` isLeft
 
 -- if result is deterministic (one json)
-runTestCase TestCase{result=(Just r), {-resultPaths=(Just rp),-} document=(Just doc), ..} =
+runTestCase TestCase{result=(Just r), resultPaths=(Just rp), document=(Just doc), ..} =
   it name $ do
     query selector doc `shouldBe` Right r
-    -- queryLocated selector doc `shouldBe` Right (V.zip rp r)
+    queryLocated selector doc `shouldBe` Right (V.zip rp r)
 
 -- if result is non-deterministic (any json from the list of results)
-runTestCase TestCase{results=(Just rs), {-resultsPaths=(Just rsp),-} document=(Just doc), ..} = do
+runTestCase TestCase{results=(Just rs), resultsPaths=(Just rsp), document=(Just doc), ..} = do
   it name $ do
     query selector doc `shouldSatisfy` (\x -> fromRight V.empty x `elem` rs)
-    -- queryLocated selector doc `shouldSatisfy` (\x -> fromRight V.empty x `elem` vecList)
+    queryLocated selector doc `shouldSatisfy` (\x -> fromRight V.empty x `elem` vecList)
     where
-      -- vecList = [ V.zip rp r | rp <- rsp, r <- rs]
+      vecList = [ V.zip rp r | rp <- rsp, r <- rs]
 
 runTestCase _ = pure ()

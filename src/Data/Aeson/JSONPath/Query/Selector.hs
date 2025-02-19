@@ -122,4 +122,18 @@ sliceArrayLocated (start,end,step) vec =
 
 
 toPathKey :: String -> Text -> String
-toPathKey loc key = loc ++ "['" ++ T.unpack key ++ "']"
+toPathKey loc key = loc ++ "['" ++ escapeEscapees (T.unpack key) ++ "']"
+  where
+    escapeEscapees :: String -> String
+    escapeEscapees [] = []
+    escapeEscapees (x:xs) = checkChar x ++ escapeEscapees xs
+      where
+        -- TODO: Do we need to escape unicode chars?
+        checkChar '\\' = ['\\', '\\']
+        checkChar '\'' = ['\\', '\'']
+        checkChar '\b' = ['\\', 'b']
+        checkChar '\r' = ['\\', 'r']
+        checkChar '\t' = ['\\', 't']
+        checkChar '\f' = ['\\', 'f']
+        checkChar '\n' = ['\\', 'n']
+        checkChar c = [c]
