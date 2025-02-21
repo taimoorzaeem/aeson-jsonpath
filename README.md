@@ -92,6 +92,12 @@ Right [
   String "Panos Cosmatos",
   String "Xavier Dolan"
 ]
+-- query along with locations
+ghci> queryLocated "$..director" json
+Right [
+  ("$['shop']['movies'][0]['director']",String "Panos Cosmatos"),
+  ("$['shop']['movies'][1]['director']",String "Xavier Dolan")
+]
 ```
 
 ### Slice Selector
