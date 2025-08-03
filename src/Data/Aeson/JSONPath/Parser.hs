@@ -16,6 +16,7 @@ module Data.Aeson.JSONPath.Parser
 
 import qualified Text.ParserCombinators.Parsec  as P
 
+import Data.Aeson.JSONPath.Query ()
 import Data.Aeson.JSONPath.Parser.Query (pRootQuery)
 import Data.Aeson.JSONPath.Types
 
