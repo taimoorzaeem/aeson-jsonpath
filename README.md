@@ -150,7 +150,8 @@ queryQQ [jsonPath|$.shop$$movies|] json -- compilation error, doesn't parse
 
 It is tested using 10000+ lines test suite given by [jsonpath-compliance-test-suite](https://github.com/jsonpath-standard/jsonpath-compliance-test-suite) :rocket:.
 
-**Note:** All tests pass except tests related to **function extensions** which we have not implemented yet.
+> [!NOTE]
+> All tests pass except tests related to **function extensions** which we have not implemented yet.
 
 ## Development
 
