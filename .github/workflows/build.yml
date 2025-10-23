@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         ghc: ['9.4.8','9.6.6','9.8.4','9.10.1','9.12.2']
-        runs-on: [macos-latest, ubuntu-latest]
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
       fail-fast: false
     name: Cabal - ${{ matrix.runs-on }} GHC ${{ matrix.ghc }}
     runs-on: ${{ matrix.runs-on }}
@@ -51,7 +51,7 @@ jobs:
     strategy:
       matrix:
         resolver: ['lts', 'nightly']
-        runs-on: [macos-latest, ubuntu-latest]
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
       fail-fast: false
     name: Stack - ${{ matrix.runs-on }} Resolver ${{ matrix.resolver }}
     runs-on: ${{ matrix.runs-on }}
