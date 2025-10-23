@@ -11,9 +11,10 @@ jobs:
     strategy:
       matrix:
         ghc: ['9.4.8','9.6.6','9.8.4','9.10.1','9.12.2']
+        runs-on: [macos-latest, ubuntu-latest]
       fail-fast: false
-    name: Cabal - Linux GHC ${{ matrix.ghc }}
-    runs-on: ubuntu-24.04
+    name: Cabal - ${{ matrix.runs-on }} GHC ${{ matrix.ghc }}
+    runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v5
     - uses: haskell-actions/setup@v2
@@ -27,9 +28,10 @@ jobs:
         path: |
           ~/.cabal
           dist-newstyle
-        key: cabal-${{ matrix.ghc }}-${{ hashFiles('aeson-jsonpath.cabal') }}
+        key: ${{ matrix.runs-on }}-cabal-${{ matrix.ghc }}-${{ hashFiles('aeson-jsonpath.cabal') }}
         restore-keys: |
-          cabal-${{ matrix.ghc }}-
+          ${{ matrix.runs-on }}-cabal-${{ matrix.ghc }}
+          ${{ matrix.runs-on }}-cabal-
 
     - name: Update Submodule
       run: |
@@ -49,21 +51,25 @@ jobs:
     strategy:
       matrix:
         resolver: ['lts', 'nightly']
+        runs-on: [macos-latest, ubuntu-latest]
       fail-fast: false
-    name: Stack - Linux Resolver ${{ matrix.resolver }}
-    runs-on: ubuntu-24.04
+    name: Stack - ${{ matrix.runs-on }} Resolver ${{ matrix.resolver }}
+    runs-on: ${{ matrix.runs-on }}
     steps:
     - uses: actions/checkout@v5
+    - uses: haskell-actions/setup@v2
       with:
+        enable-stack: true
         submodules: true
 
     - name: Cache dependencies
       uses: actions/cache@v4
       with:
         path: ~/.stack
-        key: stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
+        key: ${{ matrix.runs-on }}-stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
         restore-keys: |
-            stack-${{ matrix.resolver }}-
+          ${{ matrix.runs-on }}-stack-${{ matrix.resolver }}-
+          ${{ matrix.runs-on }}-stack-
 
     - name: Update Submodule
       run: |
