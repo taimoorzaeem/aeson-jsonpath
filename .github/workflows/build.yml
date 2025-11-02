@@ -27,6 +27,7 @@ jobs:
       with:
         path: |
           ~/.cabal
+          ~/.cache/cabal
           dist-newstyle
         key: ${{ matrix.runs-on }}-cabal-${{ matrix.ghc }}-${{ hashFiles('aeson-jsonpath.cabal') }}
         restore-keys: |
@@ -65,7 +66,9 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
-        path: ~/.stack
+        path:
+          ~/.stack
+          .stack-work
         key: ${{ matrix.runs-on }}-stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
         restore-keys: |
           ${{ matrix.runs-on }}-stack-${{ matrix.resolver }}-
