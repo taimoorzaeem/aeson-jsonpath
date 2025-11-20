@@ -18,7 +18,7 @@ jobs:
     name: Cabal - Linux GHC ${{ matrix.ghc }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
     - uses: haskell-actions/setup@82e8b5066385702e477d9dc98f287070493e8abd # v2
       with:
         ghc-version: ${{ matrix.ghc }}
@@ -53,7 +53,7 @@ jobs:
     name: Stack - Linux Resolver ${{ matrix.resolver }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
       with:
         submodules: true
 
