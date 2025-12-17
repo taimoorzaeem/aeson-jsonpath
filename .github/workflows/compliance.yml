@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-    - uses: haskell-actions/setup@0a703b53e0ecfe04a312712af19699c3d8a17c7a # v2
+    - uses: haskell-actions/setup@0512451d82f3ca8c147db62e30464e7c4ca63d30 # v2
       with:
         ghc-version: ${{ matrix.ghc }}
         submodules: true
