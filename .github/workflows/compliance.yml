@@ -60,7 +60,9 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5
       with:
-        path: ~/.stack
+        path:
+          ~/.stack
+          .stack-work
         key: stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
         restore-keys: |
             stack-${{ matrix.resolver }}-
