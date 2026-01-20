@@ -10,7 +10,7 @@ jobs:
   cabal:
     strategy:
       matrix:
-        ghc: ['9.4.8','9.6.6','9.8.4','9.10.1','9.12.2']
+        ghc: ['9.4.8','9.6.6','9.8.4','9.10.1','9.12.2','9.14.1']
         runs-on: [windows-latest, macos-latest, ubuntu-latest]
       fail-fast: false
     name: Cabal - ${{ matrix.runs-on }} GHC ${{ matrix.ghc }}
