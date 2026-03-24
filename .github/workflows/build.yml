@@ -10,11 +10,17 @@ jobs:
   cabal:
     strategy:
       matrix:
-        ghc: ['9.4.8','9.6.6','9.8.4','9.10.1','9.12.2']
-        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+        ghc: ['9.4.8','9.12.2']
+        os:
+          - runner: windows-latest
+            name: Windows
+          - runner: macos-latest
+            name: MacOS
+          - runner: ubuntu-latest
+            name: Linux
       fail-fast: false
-    name: Cabal - ${{ matrix.runs-on }} GHC ${{ matrix.ghc }}
-    runs-on: ${{ matrix.runs-on }}
+    name: Cabal - ${{ matrix.os.name }} GHC ${{ matrix.ghc }}
+    runs-on: ${{ matrix.os.runner }}
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - uses: haskell-actions/setup@f9150cb1d140e9a9271700670baa38991e6fa25c # v2
@@ -29,10 +35,10 @@ jobs:
           ~/.cabal
           ~/.cache/cabal
           dist-newstyle
-        key: ${{ matrix.runs-on }}-cabal-${{ matrix.ghc }}-${{ hashFiles('aeson-jsonpath.cabal') }}
+        key: ${{ matrix.os.runner }}-cabal-${{ matrix.ghc }}-${{ hashFiles('aeson-jsonpath.cabal') }}
         restore-keys: |
-          ${{ matrix.runs-on }}-cabal-${{ matrix.ghc }}
-          ${{ matrix.runs-on }}-cabal-
+          ${{ matrix.os.runner }}-cabal-${{ matrix.ghc }}
+          ${{ matrix.os.runner }}-cabal-
 
     - name: Update Submodule
       run: |
@@ -52,10 +58,16 @@ jobs:
     strategy:
       matrix:
         resolver: ['lts', 'nightly']
-        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+        os:
+          - runner: windows-latest
+            name: Windows
+          - runner: macos-latest
+            name: MacOS
+          - runner: ubuntu-latest
+            name: Linux
       fail-fast: false
-    name: Stack - ${{ matrix.runs-on }} Resolver ${{ matrix.resolver }}
-    runs-on: ${{ matrix.runs-on }}
+    name: Stack - ${{ matrix.os.name }} Resolver ${{ matrix.resolver }}
+    runs-on: ${{ matrix.os.runner }}
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - uses: haskell-actions/setup@f9150cb1d140e9a9271700670baa38991e6fa25c # v2
@@ -69,10 +81,10 @@ jobs:
         path:
           ~/.stack
           .stack-work
-        key: ${{ matrix.runs-on }}-stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
+        key: ${{ matrix.os.runner }}-stack-${{ matrix.resolver }}-${{ hashFiles('stack.yaml') }}
         restore-keys: |
-          ${{ matrix.runs-on }}-stack-${{ matrix.resolver }}-
-          ${{ matrix.runs-on }}-stack-
+          ${{ matrix.os.runner }}-stack-${{ matrix.resolver }}-
+          ${{ matrix.os.runner }}-stack-
 
     - name: Update Submodule
       run: |
