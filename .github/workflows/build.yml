@@ -10,7 +10,7 @@ jobs:
   cabal:
     strategy:
       matrix:
-        ghc: ['9.4.8','9.12.2']
+        ghc: ['9.4.8','9.14.1']
         os:
           - runner: windows-latest
             name: Windows
