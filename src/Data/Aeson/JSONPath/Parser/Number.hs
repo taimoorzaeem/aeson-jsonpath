@@ -11,6 +11,7 @@ import qualified Text.ParserCombinators.Parsec  as P
 import Data.Maybe                    (fromMaybe)
 import Data.Scientific               (Scientific, scientific)
 import GHC.Num                       (integerFromInt, integerToInt)
+import Text.ParserCombinators.Parsec ((<?>))
 
 import Prelude
 
@@ -20,7 +21,7 @@ pSignedInt = do
   P.notFollowedBy (P.char   '0' *> P.digit) -- no leading 011... etc
   sign <- P.optionMaybe $ P.char '-'
   num <- (read <$> P.many1 P.digit) :: P.Parser Integer
-  checkNumOutOfRange num sign
+  checkNumOutOfRange num sign <?> "signed integer"
   where
     minInt = -9007199254740991
     maxInt = 9007199254740991
@@ -37,7 +38,7 @@ pScientific :: P.Parser Scientific
 pScientific = do
   mantissa <- pSignedInt
   expo <- P.optionMaybe (P.oneOf "eE" *> pExponent)
-  return $ scientific (integerFromInt mantissa) (fromMaybe 0 expo)
+  return (scientific (integerFromInt mantissa) (fromMaybe 0 expo)) <?> "scientific integer"
 
 pDoubleScientific :: P.Parser Scientific
 pDoubleScientific = do
@@ -46,12 +47,11 @@ pDoubleScientific = do
   frac <- P.many1 P.digit
   expo <- P.optionMaybe (P.oneOf "eE" *> pExponent)
   let num = read (whole ++ "." ++ frac ++ maybe "" (\x -> "e" ++ show x) expo) :: Scientific
-  return num
+  return num <?> "scientific double"
 
 pExponent :: P.Parser Int
 pExponent = do
   sign <- P.optionMaybe (P.oneOf "+-")
   num <- read <$> P.many1 P.digit
-  return $ case sign of
-    Just '-' -> -num
-    _        -> num
+  let e = case sign of {Just '-' -> -num; _ -> num }
+  return e <?> "exponent"

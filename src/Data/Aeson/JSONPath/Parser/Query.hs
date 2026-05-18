@@ -9,7 +9,7 @@ import qualified Text.ParserCombinators.Parsec  as P
 
 import Data.Functor                  (($>))
 import Data.Maybe                    (isNothing)
-import Text.ParserCombinators.Parsec ((<|>))
+import Text.ParserCombinators.Parsec ((<|>),(<?>))
 
 import Data.Aeson.JSONPath.Parser.Filter (pFilter)
 import Data.Aeson.JSONPath.Parser.Name
@@ -23,7 +23,7 @@ pRootQuery :: P.Parser Query
 pRootQuery = do
   P.char '$'
   segs <- P.many $ P.try pSpacedOutSegments
-  return $ Query { queryType = Root, querySegments = segs }
+  (return $ Query { queryType = Root, querySegments = segs }) <?> "root query ($)"
     where
       pQ = P.try pRootQuery <|> P.try pCurrentQuery
       pSpacedOutSegments = pSpaces *> pQuerySegment pQ
@@ -32,7 +32,7 @@ pCurrentQuery :: P.Parser Query
 pCurrentQuery = do
   P.char '@'
   segs <- P.many $ P.try pSpacedOutSegments
-  return $ Query { queryType = Current, querySegments = segs }
+  (return $ Query { queryType = Current, querySegments = segs }) <?> "current query (@)"
     where
       pQ = P.try pRootQuery <|> P.try pCurrentQuery
       pSpacedOutSegments = pSpaces *> pQuerySegment pQ
@@ -43,7 +43,8 @@ pQuerySegment pQ = do
   dotdot <- P.optionMaybe (P.try $ P.string "..")
   seg <- pSegment pQ $ isNothing dotdot
   let segType = if isNothing dotdot then Child else Descendant
-  return $ QuerySegment { segmentType = segType, segment = seg }
+  (return $ QuerySegment { segmentType = segType, segment = seg }) <?> "query segment"
+
 
 pSegment :: P.Parser a -> Bool -> P.Parser (Segment a)
 pSegment pQ isChild
@@ -59,7 +60,7 @@ pBracketed pQ = do
   optionalSels <- P.many $ pCommaSepSelectors pQ
   pSpaces
   P.char ']'
-  return $ Bracketed (sel:optionalSels)
+  return (Bracketed (sel:optionalSels)) <?> "bracketed segment"
     where
       pCommaSepSelectors :: P.Parser a -> P.Parser (Selector a)
       pCommaSepSelectors p = P.try $ pSpaces *> P.char ',' *> pSpaces *> pSelector p
@@ -70,11 +71,11 @@ pDotted isChild = do
   (if isChild then P.string "." else P.string "")
   P.lookAhead (P.letter <|> P.oneOf "_" <|> pUnicodeChar)
   key <- T.pack <$> P.many1 (P.alphaNum <|> P.oneOf "_" <|> pUnicodeChar)
-  return $ Dotted key
+  return (Dotted key) <?> "dotted segment"
 
 
 pWildcardSeg :: Bool -> P.Parser (Segment a)
-pWildcardSeg isChild = (if isChild then P.string "." else P.string "") *> P.char '*' $> WildcardSegment
+pWildcardSeg isChild = (if isChild then P.string "." else P.string "") *> P.char '*' $> WildcardSegment <?> "wildcard segment"
   
 pSelector :: P.Parser a -> P.Parser (Selector a)
 pSelector pQ = P.try pName
@@ -84,10 +85,10 @@ pSelector pQ = P.try pName
                    <|> P.try (pFilter pQ)
 
 pName :: P.Parser (Selector a)
-pName = Name . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
+pName = Name . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted) <?> "name selector"
 
 pIndex :: P.Parser (Selector a)
-pIndex = Index <$> pSignedInt
+pIndex = Index <$> pSignedInt <?> "index selector"
 
 pSlice :: P.Parser (Selector a)
 pSlice = do
@@ -96,10 +97,9 @@ pSlice = do
   pSpaces
   end <- P.optionMaybe (pSignedInt <* pSpaces)
   step <- P.optionMaybe (P.char ':' *> P.optionMaybe (pSpaces *> pSignedInt))
-  return $ ArraySlice (start, end, case step of
-    Just (Just n) -> n
-    _ -> 1)
+  let step' = case step of {Just (Just n) -> n; _ -> 1}
+  return (ArraySlice (start, end, step')) <?> "array selector"
 
 
 pWildcardSel :: P.Parser (Selector a)
-pWildcardSel = P.char '*' $> WildcardSelector
+pWildcardSel = P.char '*' $> WildcardSelector <?> "wildcard selector"

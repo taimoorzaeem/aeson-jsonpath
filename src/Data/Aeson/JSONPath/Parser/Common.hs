@@ -5,16 +5,17 @@ module Data.Aeson.JSONPath.Parser.Common
   where
 
 import qualified Text.ParserCombinators.Parsec as P
+import           Text.ParserCombinators.Parsec ((<?>))
 import           Data.Char (ord)
 
 import Prelude
 
 -- https://www.rfc-editor.org/rfc/rfc9535#name-syntax
 pSpaces :: P.Parser [Char]
-pSpaces = P.many (P.oneOf " \n\r\t")
+pSpaces = P.many (P.oneOf " \n\r\t") <?> "spaces"
 
 pUnicodeChar :: P.Parser Char
-pUnicodeChar = P.satisfy inRange
+pUnicodeChar = P.satisfy inRange <?> "unicode char"
   where
     inRange c = let code = ord c in
       (code >= 0x80 && code <= 0xD7FF) ||

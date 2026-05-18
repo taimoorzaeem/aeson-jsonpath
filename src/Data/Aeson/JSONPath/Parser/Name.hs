@@ -9,12 +9,12 @@ import qualified Text.ParserCombinators.Parsec  as P
 
 import Data.Functor                  (($>))
 import Data.Char                     (ord, chr)
-import Text.ParserCombinators.Parsec ((<|>))
+import Text.ParserCombinators.Parsec ((<|>),(<?>))
 
 import Prelude
 
 pSingleQuotted :: P.Parser String
-pSingleQuotted = P.char '\'' *> P.many inQuote <* P.char '\''
+pSingleQuotted = P.char '\'' *> P.many inQuote <* P.char '\'' <?> "single quoted string"
   where
     inQuote = P.try pUnescaped
            <|> P.try (P.char '\"')
@@ -22,7 +22,7 @@ pSingleQuotted = P.char '\'' *> P.many inQuote <* P.char '\''
            <|> P.try pEscaped
 
 pDoubleQuotted :: P.Parser String
-pDoubleQuotted = P.char '\"' *> P.many inQuote <* P.char '\"'
+pDoubleQuotted = P.char '\"' *> P.many inQuote <* P.char '\"' <?> "double quoted string"
   where
     inQuote = P.try pUnescaped
            <|> P.try (P.char '\'')
@@ -30,7 +30,7 @@ pDoubleQuotted = P.char '\"' *> P.many inQuote <* P.char '\"'
            <|> P.try pEscaped
 
 pUnescaped :: P.Parser Char
-pUnescaped = P.satisfy inRange
+pUnescaped = P.satisfy inRange <?> "unescaped character"
   where
     inRange c = let code = ord c in
       (code >= 0x20 && code <= 0x21) ||
@@ -42,7 +42,7 @@ pUnescaped = P.satisfy inRange
 pEscaped :: P.Parser Char
 pEscaped = do
   P.char '\\'
-  P.try pEscapees <|> P.try pHexUnicode
+  (P.try pEscapees <|> P.try pHexUnicode) <?> "escape character"
   where
     pEscapees = P.try (P.char 'b' $> '\b')
             <|> P.try (P.char 'f' $> '\f')
@@ -53,7 +53,7 @@ pEscaped = do
             <|> P.try (P.char '\\')
 
 pHexUnicode :: P.Parser Char
-pHexUnicode = P.try pNonSurrogate <|> P.try pSurrogatePair
+pHexUnicode = (P.try pNonSurrogate <|> P.try pSurrogatePair) <?> "hexadecimal unicode character"
   where
     pNonSurrogate = P.try pNonSurrogateFirst <|> P.try pNonSurrogateSecond
       where
