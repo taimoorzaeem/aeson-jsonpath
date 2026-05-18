@@ -6,6 +6,7 @@ module Data.Aeson.JSONPath.Query.Filter
 
 import Data.Aeson                      (Value)
 import Data.Vector                     (Vector)
+import Text.Regex.TDFA                 ((=~))
 
 import qualified Data.Aeson            as JSON
 import qualified Data.Aeson.KeyMap     as KM
@@ -49,6 +50,12 @@ evaluateBasicExpr (Comparison expr) qS = evaluateCompExpr expr qS
 
 evaluateTestExpr :: TestExpr Query -> QueryState -> Bool
 evaluateTestExpr (FilterQuery expr) qS@QueryState{..} = not $ null $ executeQuery expr qS
+-- https://www.rfc-editor.org/rfc/rfc9535#type-conv
+evaluateTestExpr (TestFunc funcExpr) qS =
+  case evaluateFunctionExpr funcExpr qS of
+    NodesType res -> not $ null res
+    LogicalType b -> b
+    ValueType _   -> False
 
 
 evaluateCompExpr :: ComparisonExpr -> QueryState -> Bool
@@ -88,3 +95,47 @@ lookupSingleQSeg :: Maybe Value -> SingularQuerySegment -> Maybe Value
 lookupSingleQSeg (Just (JSON.Object obj)) (NameSQSeg txt) = KM.lookup (K.fromText txt) obj
 lookupSingleQSeg (Just (JSON.Array arr)) (IndexSQSeg idx) = (V.!?) arr idx
 lookupSingleQSeg _ _ = Nothing
+
+
+evaluateFunctionExpr :: FunctionExpr Query -> QueryState -> FunctionResult
+evaluateFunctionExpr FunctionSearch{..} qS =
+  case functionName of
+    Search -> evaluateSearchFunction (functionArg1, functionArg2) qS
+
+-- TODO: find a better way to enforce argument types (remove underscores)
+-- Search Function
+-- ===============
+-- Argument 1: ValueType
+-- Argument 2: ValueType
+-- Result:     LogicalType
+
+evaluateSearchFunction :: (FunctionArg Query, FunctionArg Query) -> QueryState -> FunctionResult
+evaluateSearchFunction (arg1, arg2) qS@QueryState{..} =
+  case (arg1, arg2) of
+    (ArgLit (LitString txt), ArgLit (LitString regex)) -> LogicalType $ txt =~ regex
+
+    (ArgLit (LitString txt), ArgQuery q) ->
+      if V.length (executeQuery q qS) /= 1 then
+        LogicalType False
+      else
+        case V.head (executeQuery q qS) of
+          JSON.String regex -> LogicalType $ txt =~ regex
+          _                 -> LogicalType False
+
+    (ArgQuery q, ArgLit (LitString regex)) ->
+      if V.length (executeQuery q qS) /= 1 then
+        LogicalType False
+      else
+        case V.head (executeQuery q qS) of
+          JSON.String txt -> LogicalType $ txt =~ regex
+          _               -> LogicalType False
+
+    (ArgQuery q1, ArgQuery q2) ->
+       if V.length (executeQuery q1 qS) /= 1 || V.length (executeQuery q2 qS) /= 1 then
+         LogicalType False
+      else
+        case (V.head (executeQuery q1 qS), V.head (executeQuery q2 qS)) of
+          (JSON.String txt, JSON.String regex) -> LogicalType $ txt =~ regex
+          _                                    -> LogicalType False
+
+    _ -> LogicalType False -- All other combinations are not valid, so return False

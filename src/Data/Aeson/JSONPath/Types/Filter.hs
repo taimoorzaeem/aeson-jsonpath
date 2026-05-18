@@ -11,11 +11,17 @@ module Data.Aeson.JSONPath.Types.Filter
   , SingularQueryType (..)
   , SingularQuery (..)
   , SingularQuerySegment (..)
+  , FunctionExpr (..)
+  , FunctionName (..)
+  , FunctionArg (..)
+  , FunctionResult (..)
   )
   where
 
+import Data.Aeson                  (Value)
 import Data.Text                   (Text)
 import Data.Scientific             (Scientific)
+import Data.Vector                 (Vector)
 
 import Language.Haskell.TH.Syntax  (Lift)
 
@@ -41,8 +47,9 @@ data BasicExpr a
   deriving (Eq, Show, Lift)
 
 -- |
-newtype TestExpr a
+data TestExpr a
   = FilterQuery a
+  | TestFunc (FunctionExpr a)
   deriving (Eq, Show, Lift)
 
 -- |
@@ -89,3 +96,38 @@ data SingularQuerySegment
   = NameSQSeg Text
   | IndexSQSeg Int
   deriving (Eq, Show, Lift)
+
+-- Function Extensions
+
+-- |
+data FunctionExpr a =
+  FunctionSearch {
+    functionName :: FunctionName
+  , functionArg1 :: FunctionArg a
+  , functionArg2 :: FunctionArg a
+  }
+  deriving (Eq, Show, Lift)
+
+-- |
+data FunctionName
+  = Search
+  -- Length
+  -- Count
+  -- Match
+  -- Value
+  deriving (Eq, Show, Lift)
+
+-- |
+data FunctionArg a
+  = ArgLit Literal
+  | ArgQuery a
+  | ArgLogicExpr (LogicalOrExpr a)
+  | ArgFuncExpr (FunctionExpr a)
+  deriving (Eq, Show, Lift)
+
+-- |
+data FunctionResult
+  = NodesType (Vector Value)
+  | LogicalType Bool
+  | ValueType (Maybe Value)
+  deriving Eq

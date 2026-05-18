@@ -121,6 +121,21 @@ books0Doc = [aesonQQ|[
       }
   ]|]
 
+books0And2Doc :: Value
+books0And2Doc = [aesonQQ|[
+      {
+        "title": "Guns, Germs, and Steel",
+        "author": "Jared Diamond",
+        "category": "reference",
+        "price": 24.99
+      },
+      {
+        "title": "Moby Dick",
+        "author": "Herman Melville",
+        "category": "fiction",
+        "price": 8.99
+      }
+  ]|]
 
 spec :: Spec
 spec = do
@@ -142,3 +157,7 @@ spec = do
 
     it "returns 0-index book item, $.store.books[-4]" $
       queryLocatedQQ [jsonPath|$.store.books[-4]|] rootDoc `shouldBe` V.zip (V.singleton "$['store']['books'][0]") (getVector books0Doc)
+
+    it "search function matches correctly with regex" $
+      queryLocatedQQ [jsonPath|$.store.books[?search(@.author, 'Diamond|Herman')]|] rootDoc
+      `shouldBe` V.zip (V.fromList [("$['store']['books'][0]"),("$['store']['books'][2]")]) (getVector books0And2Doc)

@@ -2,6 +2,10 @@
 
 All notable changes to this package are documented in this file. This project adheres to [Haskell PVP](https://pvp.haskell.org/) versioning.
 
+## Unreleased
+
+- #82, Implement `search()` function from function extensions
+
 ## 0.3.0.2
 
 - #43, Fix spaces not allowed in relative query and singular query segments

@@ -346,3 +346,7 @@ spec = do
     it "returns with filtering: test expr gives empty with non-existent key" $
       queryQQ [jsonPath|$.store.books[?@.not_here]|] rootDoc
       `shouldBe` V.empty
+
+    it "search function matches correctly with regex" $
+      queryQQ [jsonPath|$.store.books[?search(@.author, 'Diamond|Herman')]|] rootDoc
+      `shouldBe` getVector books0And2Doc
