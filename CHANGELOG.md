@@ -5,6 +5,7 @@ All notable changes to this package are documented in this file. This project ad
 ## Unreleased
 
 - #82, Implement `search()` function from function extensions
+- #83, Improve parse errors
 
 ## 0.3.0.2
 

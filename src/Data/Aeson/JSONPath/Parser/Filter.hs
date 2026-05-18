@@ -9,7 +9,7 @@ import qualified Text.ParserCombinators.Parsec  as P
 import Data.Functor                  (($>))
 import Data.Maybe                    (isNothing)
 import Data.Scientific               (Scientific)
-import Text.ParserCombinators.Parsec ((<|>))
+import Text.ParserCombinators.Parsec ((<|>),(<?>))
 
 import Data.Aeson.JSONPath.Parser.Name
 import Data.Aeson.JSONPath.Parser.Number
@@ -30,7 +30,7 @@ pLogicalOrExpr :: P.Parser a -> P.Parser (LogicalOrExpr a)
 pLogicalOrExpr pQ = do
   expr <- pLogicalAndExpr pQ
   optionalExprs <- P.many $ pOrSepLogicalAndExprs pQ
-  return $ LogicalOr (expr:optionalExprs)
+  return (LogicalOr (expr:optionalExprs)) <?> "logical or expression"
     where
       pOrSepLogicalAndExprs :: P.Parser a -> P.Parser (LogicalAndExpr a)
       pOrSepLogicalAndExprs pQ' = P.try $ pSpaces *> P.string "||" *> pSpaces *> pLogicalAndExpr pQ'
@@ -39,7 +39,7 @@ pLogicalAndExpr :: P.Parser a -> P.Parser (LogicalAndExpr a)
 pLogicalAndExpr pQ = do
   expr <- pBasicExpr pQ
   optionalExprs <- P.many $ pAndSepBasicExprs pQ
-  return $ LogicalAnd (expr:optionalExprs)
+  return (LogicalAnd (expr:optionalExprs)) <?> "logical and expression"
     where
       pAndSepBasicExprs :: P.Parser a -> P.Parser (BasicExpr a)
       pAndSepBasicExprs pQ' = P.try $ pSpaces *> P.string "&&" *> pSpaces *> pBasicExpr pQ'
@@ -59,14 +59,14 @@ pParenExpr pQ = do
   pSpaces
   P.char ')'
   let parenExp = if isNothing notOp then Paren expr else NotParen expr
-  return parenExp
+  return parenExp <?> "parenthesis expression"
 
 pTestExpr :: P.Parser a -> P.Parser (BasicExpr a)
 pTestExpr pQ = do
   notOp <- P.optionMaybe (P.char '!' <* pSpaces)
   q <- P.try (FilterQuery <$> pQ) <|> P.try (TestFunc <$> pFunctionExpr pQ)
   let testExp = if isNothing notOp then Test q else NotTest q
-  return testExp
+  return testExp <?> "test expression"
 
 pComparisonExpr :: P.Parser (BasicExpr a)
 pComparisonExpr = do
@@ -74,7 +74,7 @@ pComparisonExpr = do
   pSpaces
   compOp <- pComparisonOp
   pSpaces
-  Comparison . Comp leftC compOp <$> pComparable
+  Comparison . Comp leftC compOp <$> pComparable <?> "comparison expression"
 
 pComparisonOp :: P.Parser ComparisonOp
 pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
@@ -83,9 +83,10 @@ pComparisonOp = P.try (P.string ">=" $> GreaterOrEqual)
              <|> P.try (P.char '<' $> Less)
              <|> P.try (P.string "!=" $> NotEqual)
              <|> P.try (P.string "==" $> Equal)
+             <?> "comparison operator"
 
 pComparable :: P.Parser Comparable
-pComparable = P.try (CompLit <$> pLiteral) <|> P.try pCompSQ
+pComparable = P.try (CompLit <$> pLiteral) <|> P.try pCompSQ <?> "comparable"
 
 pLiteral :: P.Parser Literal
 pLiteral = P.try pLitString
@@ -94,40 +95,41 @@ pLiteral = P.try pLitString
         <|> P.try pLitNull
 
 pLitString :: P.Parser Literal
-pLitString = LitString . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted)
+pLitString = LitString . T.pack <$> (P.try pSingleQuotted <|> P.try pDoubleQuotted) <?> "string literal"
 
 pLitNum :: P.Parser Literal
 pLitNum = LitNum 
            <$> (P.try (P.string "-0" $> (0 :: Scientific)) -- edge case
            <|> P.try pDoubleScientific 
            <|> P.try pScientific)
+           <?> "number literal"
 
 pLitBool :: P.Parser Literal
-pLitBool = LitBool <$> (P.try (P.string "true" $> True) <|> P.try (P.string "false" $> False))
+pLitBool = LitBool <$> (P.try (P.string "true" $> True) <|> P.try (P.string "false" $> False)) <?> "bool literal"
 
 pLitNull :: P.Parser Literal
-pLitNull = P.string "null" $> LitNull
+pLitNull = P.string "null" $> LitNull <?> "null literal"
 
 pCompSQ :: P.Parser Comparable
-pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ)
+pCompSQ = CompSQ <$> (P.try pCurrentSingleQ <|> P.try pRootSingleQ) <?> "singular query"
 
 pCurrentSingleQ :: P.Parser SingularQuery
 pCurrentSingleQ = do
   P.char '@'
   segs <- P.many $ P.try (pSpaces *> pSingularQuerySegment)
-  return $ SingularQuery { singularQueryType = CurrentSQ, singularQuerySegments = segs }
+  (return $ SingularQuery { singularQueryType = CurrentSQ, singularQuerySegments = segs }) <?> "current singular query"
 
 pRootSingleQ :: P.Parser SingularQuery
 pRootSingleQ = do
   P.char '$'
   segs <- P.many $ P.try (pSpaces *> pSingularQuerySegment)
-  return $ SingularQuery { singularQueryType = RootSQ, singularQuerySegments = segs }
+  (return $ SingularQuery { singularQueryType = RootSQ, singularQuerySegments = segs }) <?> "root singular query"
 
 pSingularQuerySegment :: P.Parser SingularQuerySegment
-pSingularQuerySegment = P.try pSingularQNameSeg <|> P.try pSingularQIndexSeg
+pSingularQuerySegment = (P.try pSingularQNameSeg <|> P.try pSingularQIndexSeg) <?> "singular query segment"
 
 pSingularQNameSeg :: P.Parser SingularQuerySegment
-pSingularQNameSeg = P.try pSingularQNameBracketed <|> P.try pSingularQNameDotted
+pSingularQNameSeg = (P.try pSingularQNameBracketed <|> P.try pSingularQNameDotted) <?> "singular query name segment"
   where
     pSingularQNameBracketed = do
       P.char '['
@@ -146,7 +148,7 @@ pSingularQIndexSeg = do
   P.char '['
   idx <- pSignedInt
   P.char ']'
-  return $ IndexSQSeg idx
+  return (IndexSQSeg idx) <?> "singular query index segment"
 
 
 pFunctionExpr :: P.Parser a -> P.Parser (FunctionExpr a)
@@ -158,7 +160,7 @@ pFunctionExpr pQ = do
   arg2 <- pSpaces *> pFunctionArg pQ
   pSpaces
   P.char ')'
-  return $ FunctionSearch funcName arg1 arg2
+  return (FunctionSearch funcName arg1 arg2) <?> "function expression"
 
 
 pFunctionArg :: P.Parser a -> P.Parser (FunctionArg a)
@@ -166,3 +168,4 @@ pFunctionArg pQ = P.try (ArgLit <$> pLiteral)
                <|> P.try (ArgQuery <$> pQ)
                <|> P.try (ArgLogicExpr <$> pLogicalOrExpr pQ)
                <|> P.try (ArgFuncExpr <$> pFunctionExpr pQ)
+               <?> "function argument"
