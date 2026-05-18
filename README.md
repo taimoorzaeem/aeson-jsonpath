@@ -17,8 +17,13 @@ Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath querie
   - [x] Descendant Segment
 - [x] Normalized Paths
 - [ ] Function Extensions
+  - [ ] `length()`
+  - [ ] `count()`
+  - [ ] `match()`
+  - [x] `search()`
+  - [ ] `value()`
 
-I have decided **not** to implement Function Extensions yet. Please open an issue or discussion if you'd like to see them implemented.
+Function Extensions are not finished yet. Please open an issue or discussion if you'd like to see them implemented.
 
 ## Quick Start
 
@@ -133,6 +138,19 @@ Right [
       ("year",Number 2018.0)
     ])
   )
+]
+```
+
+### Search Function
+
+```hs
+ghci> query "$.shop.movies[?search(@.director, 'Tarantino|Dolan')]" json
+Right [
+  Object (fromList [
+    ("director",String "Xavier Dolan"),
+    ("title",String "Laurence Anyways"),
+    ("year",Number 2012.0)
+  ])
 ]
 ```
 
