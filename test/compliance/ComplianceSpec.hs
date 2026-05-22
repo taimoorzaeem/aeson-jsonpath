@@ -63,21 +63,17 @@ spec TestSuite{tests} = do
     mapM_ runTestCase tests
 
 -- Skip 5 tests because these tests are not according to Haskell TDFA regular expression.
--- Skip 2 tests that include other functions like "value()" or "count()" which are not yet
--- implemented. TODO: These can be removed, if tagged accordingly
 searchFunctionTestsToBeSkipped :: [String]
 searchFunctionTestsToBeSkipped = [
     "functions, search, filter, search function, unicode char class, uppercase"
   , "functions, search, filter, search function, unicode char class negated, uppercase"
   , "functions, search, dot matcher on \\u2028"
   , "functions, search, dot matcher on \\u2029"
-  , "functions, search, arg is a function expression"
+  , "functions, search, arg is a function expression" -- skipped bcz it has "value()" function, which is not implemented yet
   , "functions, search, escaped right square bracket"
-  , "whitespace, functions, space between arg and parenthesis"
   ]
 
 runTestCase :: TestCase -> SpecWith ()
--- skip function extension tests
 runTestCase tc@TestCase{tags=Just xs, ..} =
   if ("function" `elem` xs && not ("search" `elem` xs)) || (name `elem` searchFunctionTestsToBeSkipped)
     then xit name pending
