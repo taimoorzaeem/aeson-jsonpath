@@ -20,6 +20,9 @@ module Data.Aeson.JSONPath
   , queryLocated
   , queryLocatedQQ
 
+  -- * Dump Query
+  , dumpQuery
+
   -- * QuasiQuoter
   , jsonPath
   )
@@ -33,7 +36,7 @@ import Language.Haskell.TH.Quote   (QuasiQuoter (..))
 import Language.Haskell.TH.Syntax  (lift)
 
 import Data.Aeson.JSONPath.Parser  (pQuery)
-import Data.Aeson.JSONPath.Query   (qQuery, qQueryLocated)
+import Data.Aeson.JSONPath.Query   (qQuery, qQueryLocated, dumpQuery)
 
 import Data.Aeson.JSONPath.Types
 

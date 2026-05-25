@@ -12,7 +12,9 @@ This module is responsible for executing the JSONPath query
 module Data.Aeson.JSONPath.Query
   (
     module Data.Aeson.JSONPath.Query.Query
+  , module Data.Aeson.JSONPath.Query.DumpQuery
   )
   where
 
 import Data.Aeson.JSONPath.Query.Query
+import Data.Aeson.JSONPath.Query.DumpQuery

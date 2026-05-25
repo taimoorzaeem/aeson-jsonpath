@@ -2,6 +2,10 @@
 
 All notable changes to this package are documented in this file. This project adheres to [Haskell PVP](https://pvp.haskell.org/) versioning.
 
+## Unreleased
+
+- #85, Implement `dumpQuery` to dump JSONPath query
+
 ## 0.4.0.0
 
 - #82, Implement `search()` function from function extensions
