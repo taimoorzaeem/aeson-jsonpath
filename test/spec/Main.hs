@@ -7,6 +7,7 @@ import qualified Test.Hspec as HS
 import qualified ParserSpec
 import qualified QuerySpec
 import qualified LocatedSpec
+import qualified DumpQuerySpec
 
 import Test.Hspec.Runner
 import Prelude
@@ -17,6 +18,7 @@ specs = do
     ParserSpec.spec
     QuerySpec.spec
     LocatedSpec.spec
+    DumpQuerySpec.spec
 
 
 main :: IO ()

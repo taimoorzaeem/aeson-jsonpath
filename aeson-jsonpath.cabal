@@ -48,6 +48,7 @@ library
                       Data.Aeson.JSONPath.Query.Segment
                       Data.Aeson.JSONPath.Query.Selector
                       Data.Aeson.JSONPath.Query.Filter
+                      Data.Aeson.JSONPath.Query.DumpQuery
                       Data.Aeson.JSONPath.Types.Query
                       Data.Aeson.JSONPath.Types.Segment
                       Data.Aeson.JSONPath.Types.Selector
@@ -74,6 +75,7 @@ test-suite spec
   other-modules:      ParserSpec
                       QuerySpec
                       LocatedSpec
+                      DumpQuerySpec
   build-depends:      aeson                     >= 2.0.3 && < 2.5
                     , aeson-jsonpath
                     , base                      >= 4.9 && < 4.23

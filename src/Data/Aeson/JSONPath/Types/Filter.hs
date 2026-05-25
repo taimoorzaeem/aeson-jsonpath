@@ -101,6 +101,7 @@ data SingularQuerySegment
 
 -- |
 data FunctionExpr a =
+  -- TODO: Remove functionName, not needed because Type Constructor already  tells us that
   FunctionSearch {
     functionName :: FunctionName
   , functionArg1 :: FunctionArg a
