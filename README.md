@@ -1,6 +1,6 @@
 # aeson-jsonpath
 
-[![Build](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg)](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml) [![hackage-docs](https://img.shields.io/badge/hackage-v0.4.0.0-blue)](https://hackage.haskell.org/package/aeson-jsonpath) [![Compliance](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/compliance.yml/badge.svg)](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/compliance.yml)
+[![Build](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml/badge.svg)](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/build.yml) [![hackage-docs](https://img.shields.io/badge/hackage-v0.4.1.0-blue)](https://hackage.haskell.org/package/aeson-jsonpath) [![Compliance](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/compliance.yml/badge.svg)](https://github.com/taimoorzaeem/aeson-jsonpath/actions/workflows/compliance.yml)
 
 Run [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535) compliant JSONPath queries on [Data.Aeson](https://hackage.haskell.org/package/aeson).
 
