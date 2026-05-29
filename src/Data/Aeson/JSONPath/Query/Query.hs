@@ -1,9 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Data.Aeson.JSONPath.Query.Query
-  ( qQuery
-  , qQueryLocated
-  )
-  where
+module Data.Aeson.JSONPath.Query.Query where
 
 import Control.Monad                   (join)
 import Data.Aeson                      (Value)

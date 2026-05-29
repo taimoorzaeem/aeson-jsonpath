@@ -1,8 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Data.Aeson.JSONPath.Query.Filter
-  ( filterOrExpr
-  , filterOrExprLocated )
-  where
+module Data.Aeson.JSONPath.Query.Filter where
 
 import Data.Aeson                      (Value)
 import Data.Vector                     (Vector)

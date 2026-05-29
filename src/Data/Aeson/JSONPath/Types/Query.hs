@@ -1,10 +1,5 @@
 {-# LANGUAGE DeriveLift #-}
-module Data.Aeson.JSONPath.Types.Query
-  ( Query (..)
-  , QueryType (..)
-  , QueryState (..)
-  )
-  where
+module Data.Aeson.JSONPath.Types.Query where
 
 import Data.Aeson  (Value)
 import Data.Vector (Vector)

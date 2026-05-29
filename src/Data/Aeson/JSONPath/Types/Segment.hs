@@ -1,10 +1,5 @@
 {-# LANGUAGE DeriveLift #-}
-module Data.Aeson.JSONPath.Types.Segment
-  (Segment (..)
-  , QuerySegment (..)
-  , SegmentType (..)
-  )
-  where
+module Data.Aeson.JSONPath.Types.Segment where
 
 import Data.Aeson.JSONPath.Types.Selector (Selector (..))
 import Data.Text                          (Text)

@@ -1,9 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Data.Aeson.JSONPath.Query.Segment
-  ( qQuerySegment
-  , qQuerySegmentLocated
-  )
-  where
+module Data.Aeson.JSONPath.Query.Segment where
 
 import Control.Monad (join)
 import Data.Aeson    (Value)
@@ -15,7 +11,7 @@ import qualified Data.Aeson.Key     as K
 import qualified Data.Vector        as V
 
 import Data.Aeson.JSONPath.Types
-import Data.Aeson.JSONPath.Query.Selector
+import Data.Aeson.JSONPath.Query.Selector hiding (toPathKey)
 
 import Prelude
 
