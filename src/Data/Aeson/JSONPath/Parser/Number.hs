@@ -1,10 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
-module Data.Aeson.JSONPath.Parser.Number
-  ( pSignedInt
-  , pScientific
-  , pDoubleScientific
-  )
-  where
+module Data.Aeson.JSONPath.Parser.Number where
 
 import qualified Text.ParserCombinators.Parsec  as P
 

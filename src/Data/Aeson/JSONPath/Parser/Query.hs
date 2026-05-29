@@ -1,8 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
-module Data.Aeson.JSONPath.Parser.Query
-  ( pRootQuery
-  , pCurrentQuery )
-  where
+module Data.Aeson.JSONPath.Parser.Query where
 
 import qualified Data.Text                      as T
 import qualified Text.ParserCombinators.Parsec  as P
@@ -18,6 +15,10 @@ import Data.Aeson.JSONPath.Parser.Common
 import Data.Aeson.JSONPath.Types
 
 import Prelude
+
+-- | Query parser
+pQuery :: P.Parser Query
+pQuery = pRootQuery <* P.eof
 
 pRootQuery :: P.Parser Query
 pRootQuery = do

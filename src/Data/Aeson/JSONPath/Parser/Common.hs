@@ -1,8 +1,4 @@
-module Data.Aeson.JSONPath.Parser.Common
-  ( pSpaces
-  , pUnicodeChar
-  )
-  where
+module Data.Aeson.JSONPath.Parser.Common where
 
 import qualified Text.ParserCombinators.Parsec as P
 import           Text.ParserCombinators.Parsec ((<?>))

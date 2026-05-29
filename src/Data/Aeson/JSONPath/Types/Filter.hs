@@ -1,22 +1,5 @@
 {-# LANGUAGE DeriveLift #-}
-module Data.Aeson.JSONPath.Types.Filter
-  (LogicalOrExpr (..)
-  , LogicalAndExpr (..)
-  , BasicExpr (..)
-  , TestExpr (..)
-  , ComparisonExpr (..)
-  , ComparisonOp (..)
-  , Comparable (..)
-  , Literal (..)
-  , SingularQueryType (..)
-  , SingularQuery (..)
-  , SingularQuerySegment (..)
-  , FunctionExpr (..)
-  , FunctionName (..)
-  , FunctionArg (..)
-  , FunctionResult (..)
-  )
-  where
+module Data.Aeson.JSONPath.Types.Filter where
 
 import Data.Aeson                  (Value)
 import Data.Text                   (Text)

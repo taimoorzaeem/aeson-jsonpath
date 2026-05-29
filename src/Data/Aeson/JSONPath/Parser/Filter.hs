@@ -1,7 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
-module Data.Aeson.JSONPath.Parser.Filter
-  ( pFilter )
-  where
+module Data.Aeson.JSONPath.Parser.Filter where
 
 import qualified Data.Text                      as T
 import qualified Text.ParserCombinators.Parsec  as P

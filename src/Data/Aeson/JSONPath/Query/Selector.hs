@@ -1,9 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Data.Aeson.JSONPath.Query.Selector
-  ( qSelector
-  , qSelectorLocated
-  )
-  where
+module Data.Aeson.JSONPath.Query.Selector where
 
 import Data.Aeson     (Value)
 import Data.Vector    (Vector)

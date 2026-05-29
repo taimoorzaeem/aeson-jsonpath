@@ -11,17 +11,17 @@ Portability : Portable
 This module is responsible for parsing the JSONPath query
 -}
 module Data.Aeson.JSONPath.Parser
-  ( pQuery )
+  (
+    module Data.Aeson.JSONPath.Parser.Query
+  , module Data.Aeson.JSONPath.Parser.Name
+  , module Data.Aeson.JSONPath.Parser.Number
+  , module Data.Aeson.JSONPath.Parser.Filter
+  , module Data.Aeson.JSONPath.Parser.Common
+  )
   where
 
-import qualified Text.ParserCombinators.Parsec  as P
-
-import Data.Aeson.JSONPath.Query ()
-import Data.Aeson.JSONPath.Parser.Query (pRootQuery)
-import Data.Aeson.JSONPath.Types
-
-import Prelude
-
--- | Query parser
-pQuery :: P.Parser Query
-pQuery = pRootQuery <* P.eof
+import Data.Aeson.JSONPath.Parser.Query
+import Data.Aeson.JSONPath.Parser.Name
+import Data.Aeson.JSONPath.Parser.Number
+import Data.Aeson.JSONPath.Parser.Filter
+import Data.Aeson.JSONPath.Parser.Common

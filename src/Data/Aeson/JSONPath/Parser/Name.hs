@@ -1,9 +1,5 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
-module Data.Aeson.JSONPath.Parser.Name
-  ( pSingleQuotted
-  , pDoubleQuotted
-  )
-  where
+module Data.Aeson.JSONPath.Parser.Name where
 
 import qualified Text.ParserCombinators.Parsec  as P
 

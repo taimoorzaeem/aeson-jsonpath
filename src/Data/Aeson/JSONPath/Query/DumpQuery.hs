@@ -1,8 +1,6 @@
 {-# LANGUAGE LambdaCase      #-}
 {-# LANGUAGE RecordWildCards #-}
-module Data.Aeson.JSONPath.Query.DumpQuery
-  ( dumpQuery )
-  where
+module Data.Aeson.JSONPath.Query.DumpQuery where
 
 import Data.Text                       (Text)
 

@@ -1,7 +1,5 @@
 {-# LANGUAGE DeriveLift #-}
-module Data.Aeson.JSONPath.Types.Selector
-  (Selector (..))
-  where
+module Data.Aeson.JSONPath.Types.Selector where
 
 import Data.Aeson.JSONPath.Types.Filter (LogicalOrExpr (..))
 import Data.Text                        (Text)
