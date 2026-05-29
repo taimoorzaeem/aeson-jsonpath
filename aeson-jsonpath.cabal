@@ -90,6 +90,8 @@ test-suite compliance
   main-is:            Main.hs
   other-modules:      ComplianceSpec
                       Paths_aeson_jsonpath
+                      -- required by cabal spec 3.0
+  autogen-modules:    Paths_aeson_jsonpath
   build-depends:      aeson                     >= 2.0.3 && < 2.5
                     , aeson-jsonpath
                     , base                      >= 4.9 && < 4.23
