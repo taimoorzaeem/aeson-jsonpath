@@ -26,7 +26,7 @@ jobs:
     name: Cabal - ${{ matrix.os.name }} GHC ${{ matrix.ghc }}
     runs-on: ${{ matrix.os.runner }}
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
     - uses: haskell-actions/setup@f9150cb1d140e9a9271700670baa38991e6fa25c # v2
       with:
         ghc-version: ${{ matrix.ghc }}
@@ -73,7 +73,7 @@ jobs:
     name: Stack - ${{ matrix.os.name }} Resolver ${{ matrix.resolver }}
     runs-on: ${{ matrix.os.runner }}
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
     - uses: haskell-actions/setup@f9150cb1d140e9a9271700670baa38991e6fa25c # v2
       with:
         enable-stack: true
