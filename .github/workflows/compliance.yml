@@ -20,7 +20,7 @@ jobs:
         ghc: ['9.4.8','9.14.1']
       fail-fast: false
     name: Cabal - Linux GHC ${{ matrix.ghc }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - uses: haskell-actions/setup@6037f33647c3f17758a2356c80fc4a53d7e0685d # v2.12.0
@@ -55,7 +55,7 @@ jobs:
         resolver: ['lts', 'nightly']
       fail-fast: false
     name: Stack - Linux Resolver ${{ matrix.resolver }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
