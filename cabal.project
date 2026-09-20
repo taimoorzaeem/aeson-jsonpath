@@ -1,1 +1,2 @@
 packages: aeson-jsonpath.cabal
+tests: true
